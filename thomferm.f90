@@ -71,16 +71,13 @@ betal  = 0.5*(1.0-zeta)*beta
 gammal = 0.5*(1.0-zeta)*gamma
 sigmal = 0.5*(1.0-zeta)*sigma
 
-<<<<<<< HEAD
 ! Step variables, n for integration, rhodv chosen for best agreement with incompressibility (derivatives highly
 ! reliant on step size)
 n = 800
 rhodv = 0.00833333333333333
-=======
 ! Step variables, n for integration, m for graph output
 n = 800
 m = 93
->>>>>>> 2f592b1308b7b77737e685df6e2933e17e9e8b89
 
 
 ! User interface 
@@ -148,19 +145,16 @@ else
 	write(*,*) "Please enter the upper bound:"
 	read(*,*) rhofinal
 	
-<<<<<<< HEAD
 	m = ceiling((rhofinal - rholow)/rhodv)
 
 	
 	write(rhorange,'(2f5.2)') rholow, rhofinal
-=======
+
 	rhodv = (rhofinal - rholow)/m
->>>>>>> 2f592b1308b7b77737e685df6e2933e17e9e8b89
 
 	! Filename logic, standard (-std) or neutron (-neut) matter names
 	if (mattypeparse .eq. "S") then
 	
-<<<<<<< HEAD
 		open(unit=13,file=trim(rhorange)//"energypernucleonstd.dat",position="append",status="replace")
 		pressrho   = trim(rhorange)//"Pressurebyrhostd.dat"
 		pressdense = trim(rhorange)//"Pressurebyepsilonstd.dat"
@@ -170,7 +164,7 @@ else
 		open(unit=13,file=trim(rhorange)//"energypernucleonneut.dat",position="append",status="replace")
 		pressrho	 = trim(rhorange)//"Pressurebyrhoneut.dat"
 		pressdense   = trim(rhorange)//"Pressurebyepsilonneut.dat"
-=======
+
 		open(unit=13,file="energypernucleonstd.dat",position="append",status="replace")
 		pressrho   = "Pressurebyrhostd.dat"
 		pressdense = "Pressurebyepsilonstd.dat"
@@ -182,7 +176,6 @@ else
 		pressrho	 = "Pressurebyrhoneut.dat"
 		pressdense   = "Pressurebyepsilonneut.dat"
 		comprho		 = "Incompressbyrhoneut.dat"
->>>>>>> 2f592b1308b7b77737e685df6e2933e17e9e8b89
 		
 	end if
 
@@ -192,19 +185,18 @@ allocate(enerray(4,m))
 do i = 1, m, 1
 
 ! Iteration of variables
-<<<<<<< HEAD
+
 rho = rholow + rhodv*float(i)
 rhobar = rho
 
 momentumcurrent = (3.0*(pi**2)*rho)**(1.0/3.0)
 dv = momentumcurrent/float(n)
-=======
+
 rho = rhodv*float(i)
 rhobar = rho
 momentumcurrent = (3.0*(pi**2)*rho)**(1.0/3.0)
 dv = momentumcurrent/float(n)
 
->>>>>>> 2f592b1308b7b77737e685df6e2933e17e9e8b89
 call potential
 call kinetic
 
@@ -225,10 +217,7 @@ end do
 
 ! File Closing statements
 close(unit=13)
-<<<<<<< HEAD
 
-=======
->>>>>>> 2f592b1308b7b77737e685df6e2933e17e9e8b89
 call press(enerray)
 
 call incompressibility(enerray)

@@ -2,10 +2,11 @@ subroutine boolequad(arr,booleint)
 
 ! Integration subroutine, uses boolean quadrature method (5-pt)
 
-	use globalvars
+use globalvars
 
-	real (kind=8), dimension(n)				  :: arr		! Dummy name for array
-	real (kind=8), intent(out)				  :: booleint	! Final value for this subroutine
+implicit none
+	real (kind=8), dimension(n)		  :: arr		! Dummy name for array
+	real (kind=8), intent(out)		  :: booleint	! Final value for this subroutine
 	integer							  :: i			! Looping integer
 
 ! Initialization
@@ -26,12 +27,12 @@ subroutine kinetic
 
 ! Calcalates the kinetic energy, calls subroutine boolequad
 
-	use globalvars
+use globalvars
 
-	implicit none
-			integer								:: i			! loop integer
-			real				(kind=8)				:: kin, x, p1	! equation and variable variables
-			real (kind=8), allocatable					:: kinarr(:)	! array for holding values for use in boolequad
+implicit none
+	integer								:: i			! loop integer
+	real (kind=8)						:: kin, x, p1	! equation and variable variables
+	real (kind=8), allocatable			:: kinarr(:)	! array for holding values for use in boolequad
 
 ! Kinetic energy formula, original int(x^2)d3.
 ! as implemented the d3 is converted to 4pix^4 resulting in formula kin(x)
@@ -60,17 +61,17 @@ subroutine potential
 use globalvars
 
 implicit none
-	real			(kind=8)	:: au, gup, su, bup				! Fitted coefficients, mixed matter
-	real			(kind=8)	:: al, glo, sl, blo				! Fitted coefficients, unmixed matter
-	real		(kind=8)		:: x, y							! Eqn variables
-	integer 			:: i, j							! Looping variables
+	real (kind=8)				:: au, gup, su, bup				! Fitted coefficients, mixed matter
+	real (kind=8)				:: al, glo, sl, blo				! Fitted coefficients, unmixed matter
+	real (kind=8)				:: x, y							! Eqn variables
+	integer 					:: i, j							! Looping variables
 	real (kind=8), allocatable 	:: upperarr1(:), upperarr2(:)	! Arrays for first and second integration
 	real (kind=8), allocatable 	:: lowerarr1(:), lowerarr2(:)	! Arrays for first and second integration
 	real (kind=8), allocatable 	:: botharr(:)					! Summed array for output
-	real			  (kind=8)	:: mom1, mom2					! Iterated variables
-	real		(kind=8)		:: uquad, lquad					! Temp. holding variables for integration
-	real		(kind=8)		:: dv1, dv2						! Step sizes for the iterated variables
-	real		(kind=8)		:: pref, prefu					! Prefixes for the explicit portion of the pot. full equation
+	real (kind=8)				:: mom1, mom2					! Iterated variables
+	real (kind=8)				:: uquad, lquad					! Temp. holding variables for integration
+	real (kind=8)				:: dv1, dv2						! Step sizes for the iterated variables
+	real (kind=8)				:: pref, prefu					! Prefixes for the explicit portion of the pot. full equation
 
 ! Equations used, l for unmixed matter, u for mixed
 bup(x,y) = betau*(abs(y-x)/momentumcurrent)**2
@@ -108,12 +109,8 @@ do i = 1, n, 1
 		mom2 = dv2*float(j)
 		
 		if (abs(mom1-mom2) .gt. 0.415) then
-		
-<<<<<<< HEAD
-			upperarr1(j) = (alphau - bup(mom1,mom2)  - su + gup(mom1,mom2))*(mom1**2)*(mom2**2)
-=======
+
 			upperarr1(j) = (matchoice)*(alphau - bup(mom1,mom2)  - su + gup(mom1,mom2))*(mom1**2)*(mom2**2)
->>>>>>> 2f592b1308b7b77737e685df6e2933e17e9e8b89
 			lowerarr1(j) = (alphal - blo(mom1,mom2)  - sl + glo(mom1,mom2))*(mom1**2)*(mom2**2)
 		
 		end if
@@ -128,11 +125,10 @@ do i = 1, n, 1
 end do
 
 ! Combines the mixed and pure matter results for use in integration
-<<<<<<< HEAD
+
 botharr = lowerarr2 + (matchoice)*upperarr2
-=======
+
 botharr = lowerarr2 + upperarr2
->>>>>>> 2f592b1308b7b77737e685df6e2933e17e9e8b89
 
 call boolequad(botharr,pot)
 
@@ -148,10 +144,10 @@ subroutine chartoup(stringin,stringout)
 
 ! converts text input to upper case
 
-	implicit none
-		character(*)					:: stringin
-		character(len(stringin))		:: stringout
-		integer							:: i, j
+implicit none
+	character(*)					:: stringin
+	character(len(stringin))		:: stringout
+	integer							:: i, j
 
 do i = 1, len(stringin), 1
 	j = iachar(stringin(i:i))
@@ -173,10 +169,9 @@ subroutine press(arrin)
 use globalvars
 
 implicit none
-	real (kind=8),dimension(4,m), intent(in) :: arrin
-	real					(kind=8)		:: derivative
-<<<<<<< HEAD
-	integer		(kind=8)					:: i, step
+	real (kind=8),dimension(4,m), intent(in)	:: arrin
+	real (kind=8)								:: derivative
+	integer	(kind=8)							:: i, step
 
 open(unit=11,file=trim(pressrho),position="append",status="replace")
 open(unit=14,file=trim(pressdense),position="append",status="replace")
@@ -189,29 +184,11 @@ do i = 1, m-step, 1
 	
 	write(11,*) arrin(1,i)/rho0, (arrin(1,i)**2)*derivative*197.329
 	write(14,*) arrin(2,i), (arrin(1,i)**2)*derivative*197.329
-=======
-	integer							:: i
-
-open(unit=11,file=trim(pressrho),position="append",status="replace")
-open(unit=12,file=trim(pressdense),position="append",status="replace")
-
-		
-do i = 1, m-8, 1
-
-	derivative = (arrin(3,i+8) - arrin(3,i))/(8.0*rhodv)
-	
-	write(11,*) arrin(1,i)/rho0, (arrin(1,i)**2)*derivative*197.329
-	write(12,*) arrin(2,i), (arrin(1,i)**2)*derivative*197.329
->>>>>>> 2f592b1308b7b77737e685df6e2933e17e9e8b89
 
 end do
 	
 close(11)
-<<<<<<< HEAD
 close(14)
-=======
-close(12)
->>>>>>> 2f592b1308b7b77737e685df6e2933e17e9e8b89
 
 end subroutine
 
@@ -224,10 +201,10 @@ subroutine incompressibility(arrin)
 use globalvars
 
 implicit none
-	real (kind=8),dimension(4,m), intent(in)		:: arrin
-	real (kind=8)									:: compress
-	integer, dimension(4)							:: valarray
-	integer (kind=8)								:: minim
+	real (kind=8),dimension(4,m), intent(in)				:: arrin
+	real (kind=8)											:: compress
+	integer (kind=8), dimension(4)							:: valarray
+	integer (kind=8)										:: minim
 
 valarray = minloc(arrin,dim=2)
 minim = valarray(3)
@@ -237,7 +214,14 @@ compress = (arrin(4,minim+1)-2.0*arrin(4,minim)+arrin(4,minim-1))/((arrin(1,mini
 write(*,*) arrin(1,minim)/rho0, 9.0*(arrin(1,minim)**2)*compress*197.329
 
 end subroutine
-	
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+subroutine input
+
+! Parses input
+
+use globalvars
 
 
 
