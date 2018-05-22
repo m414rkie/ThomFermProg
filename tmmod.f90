@@ -16,6 +16,5 @@ module globalvars
 	real  		(kind=8), allocatable			:: epsrho(:,:), pressure(:,:), enerray(:,:)
 	character(1)								:: densenum, densenumparse, mattype, mattypeparse
 	character(50)								:: pressdense, pressrho, rhorange
-	character(24)								:: pressdense, pressrho, comprho
 
 end module

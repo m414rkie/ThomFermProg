@@ -79,48 +79,9 @@ rhodv = 0.00833333333333333
 n = 800
 m = 93
 
-
-! User interface 
-! Inputs
-50 write(*,*) "Symmetric matter or Neutron matter? (S/N)"
-read(*,*) mattype
-
-call chartoup(mattype,mattypeparse)
-
-! Parse first input
-if ((mattypeparse .ne. "S") .and. (mattypeparse .ne. "N")) then
-	write(*,*) "Please enter 'S' for symmetric of 'N' for neutron matter"
-	goto 50
-end if
-
-if (mattypeparse .eq. "S") then
-	
-	matchoice = 1.0
-	
-	else
-	
-	matchoice = 0.0
-
-end if
-
-51 write(*,*) "Would you like a single density or a range? (S/R)"
-read(*,*) densenum
-
-call chartoup(densenum,densenumparse)
-
-! Parse second input
-if ((densenumparse .ne. "S") .and. (densenumparse .ne. "R")) then
-	write(*,*) "Please enter 'S' for a single density or 'R' for a range."
-	goto 51
-end if
-
-! Further inputs 
+call input
 
 if (densenumparse .eq. "S") then
-
-! For a single density
-	write(*,*) "Please enter the density desired."
-	read(*,*) rho
 	
 	momentumcurrent = (3.0*(pi**2)*rho)**(1.0/3.0)
 	rhobar = rho
@@ -139,45 +100,7 @@ if (densenumparse .eq. "S") then
 
 else 
 
-! For a range of densities
-	write(*,*) "Please enter the lower bound of density desired:"
-	read(*,*) rholow
-	write(*,*) "Please enter the upper bound:"
-	read(*,*) rhofinal
-	
-	m = ceiling((rhofinal - rholow)/rhodv)
 
-	
-	write(rhorange,'(2f5.2)') rholow, rhofinal
-
-	rhodv = (rhofinal - rholow)/m
-
-	! Filename logic, standard (-std) or neutron (-neut) matter names
-	if (mattypeparse .eq. "S") then
-	
-		open(unit=13,file=trim(rhorange)//"energypernucleonstd.dat",position="append",status="replace")
-		pressrho   = trim(rhorange)//"Pressurebyrhostd.dat"
-		pressdense = trim(rhorange)//"Pressurebyepsilonstd.dat"
-		
-	else
-	
-		open(unit=13,file=trim(rhorange)//"energypernucleonneut.dat",position="append",status="replace")
-		pressrho	 = trim(rhorange)//"Pressurebyrhoneut.dat"
-		pressdense   = trim(rhorange)//"Pressurebyepsilonneut.dat"
-
-		open(unit=13,file="energypernucleonstd.dat",position="append",status="replace")
-		pressrho   = "Pressurebyrhostd.dat"
-		pressdense = "Pressurebyepsilonstd.dat"
-		comprho	   = "Incompressbyrhostd.dat" 
-		
-	else
-	
-		open(unit=13,file="energypernucleonneut.dat",position="append",status="replace")
-		pressrho	 = "Pressurebyrhoneut.dat"
-		pressdense   = "Pressurebyepsilonneut.dat"
-		comprho		 = "Incompressbyrhoneut.dat"
-		
-	end if
 
 ! Output loop
 
