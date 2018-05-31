@@ -61,8 +61,7 @@ subroutine potential
 use globalvars
 
 implicit none
-	real (kind=8)				:: au, gup, su, bup				! Fitted coefficients, mixed matter
-	real (kind=8)				:: al, glo, sl, blo				! Fitted coefficients, unmixed matter
+	real (kind=8)				:: sl, su, blo, bup, glo, gup
 	real (kind=8)				:: x, y							! Eqn variables
 	integer 					:: i, j							! Looping variables
 	real (kind=8), allocatable 	:: upperarr1(:), upperarr2(:)	! Arrays for first and second integration
@@ -116,19 +115,24 @@ do i = 1, n, 1
 		end if
 		
 	end do
-	
+
 	call boolequad(upperarr1,uquad)
 	upperarr2(i) = uquad
 	call boolequad(lowerarr1,lquad)
 	lowerarr2(i) = lquad
 	
-end do
+	if(exitcondition .eq. 1) then
+		lquad = singlenergy
+		exit
+	else 
+		goto 102
+	end if
+
+102 end do
 
 ! Combines the mixed and pure matter results for use in integration
 
 botharr = lowerarr2 + (matchoice)*upperarr2
-
-botharr = lowerarr2 + upperarr2
 
 call boolequad(botharr,pot)
 
@@ -296,12 +300,80 @@ end if
 
 end subroutine
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+subroutine chempot
 
+use globalvars
 
+implicit none
+	real (kind=8)		:: pfp, pfe
+	real (kind=8)		:: protchem, elecchem
 
+write(*,*) "Input Density to use in chemical potential test:"
+read(*,*) rho
 
+pfp = (3.0*(pi**2)*rho)**(1.0/3.0)
 
+pfe = pfp
+exitcondition = 1
+matchoice = 0.0
+rhobar = rho
+
+momentumcurrent = pfp
+call potential
+write(*,*) "A"
+protchem = -temp*(2.0/rho0)*((4.0*pi)**2)*(2.0/((2.0*pi)**3))*singlenergy*197.329 + ((pfp**2)/(2.0*mass*197.329))
+
+elecchem = ((pfe**2) + (0.511)**2)**(1.0/2.0)
+
+neutchem = protchem + elecchem
+
+write(*,*) "Proton potential:", protchem
+write(*,*) "Electron potential:", elecchem
+write(*,*) "Proton density:", rho
+
+call root
+
+end subroutine
+
+subroutine root 
+
+use globalvars
+
+implicit none
+	real (kind=8)		:: step, pfn
+	real (kind=8)		:: neutsingle, neutrho
+	real (kind=8)		:: func, derive, derivepls1, deriveorig
+	
+matchoice = 0.0
+step = 0.01
+pfn = 0.0
+101 momentumcurrent = pfn
+rho = (pfn**3)/(3.0*(pi**2))
+rhobar = rho
+	
+call potential	
+neutsingle = -temp*(2.0/rho0)*((4.0*pi)**2)*(2.0/((2.0*pi)**3))*singlenergy*197.329 + ((pfn**2)/(2.0*mass*197.329))
+	
+if(abs(neutchem - neutsingle) .le. 0.001) then
+	write(*,*) "Neutron potential:", neutchem
+	write(*,*) "Neutron single energy:", neutsingle
+	write(*,*) "Neutron density:", rho
+	write(*,*) "Neutron Fermi momentum:", pfn
+else
+	deriveorig = neutsingle
+	momentumcurrent = pfn + step 
+	call potential
+	derivepls1 = -temp*(2.0/rho0)*((4.0*pi)**2)*(2.0/((2.0*pi)**3))*singlenergy*197.329 + ((momentumcurrent**2)/(2.0*mass*197.329))
+	derive = (derivepls1 - deriveorig)/step
+	pfn = pfn + step !- deriveorig/derive
+	goto 101
+end if
+
+end subroutine
+
+	
 
 
 

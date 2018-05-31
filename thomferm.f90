@@ -80,6 +80,7 @@ n = 800
 m = 93
 
 call input
+exitcondition = 0
 
 if (densenumparse .eq. "S") then
 	
@@ -146,5 +147,7 @@ call press(enerray)
 call incompressibility(enerray)
 
 end if
+
+call chempot
 
 end program
