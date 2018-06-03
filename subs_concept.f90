@@ -85,7 +85,7 @@ q = y+1 ; r = y-1 ; s = y-1 ; t = y+1
 		end if
 				
 		total = (a*arr(i,y)+b*arr(j,y)+c*arr(x,k)+d*arr(x,l)+e*arr(m,q)+ &
-				f*arr(n,r)+g*arr(o,s)+h*arr(p,t))
+				f*arr(n,r)+g*arr(o,s)+h*arr(p,t))/norm
 
 end subroutine
 
@@ -98,62 +98,65 @@ subroutine growth(x,y,arrin,arrout)
 !(straight percentage at this point). 
 	
 use globalvars
+use functions
 	
 implicit none
 	integer, intent(in)							:: x, y					! Input coordinates
 	real,dimension(grid,grid), intent(in) 		:: arrin				! Input array
 	real,dimension(grid,grid), intent(out)		:: arrout				! Output array
-	real										:: growpercent = 1.2	! growth of array
-	real										:: fishgrowbase = 1.01	! growth of fish layer
-	real										:: fishgrow = 0.01		! additional growth for fish based on algae near input
+	real										:: fishpop
+	real										:: growpercent = 1.1
 	
-	
-	! This section for future use when fish are not evenly distributed
-!@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 	arrout(x,y) = arrin(x,y)*growpercent
+	
+fishlocal = 0.0
+fishpop = fish(x,y)
+
 	
 	! Checks neighboring gridpoints for fish population and grows faster with neighbors.
 	! Also checks boundaries to help with edge effects.
 	if(holding(x,y) .eq. 0.0) then
-		fishgrowbase = fishgrowbase + fishgrow
+		fishlocal = fishlocal - 1.0
+	else
+		fishlocal = fishlocal + holding(x,y)*0.1	
 	end if
 	
 	if ((holding(x-1,y) .eq. 0.0) .and. (x .gt. 1)) then
-		fishgrowbase = fishgrowbase + fishgrow
+		fishlocal = fishlocal + 0.1
 	end if
 	
 	if ((holding(x+1,y) .eq. 0.0) .and. (x .lt. grid)) then
-		fishgrowbase = fishgrowbase + fishgrow
+		fishlocal = fishlocal + 0.1
 	end if
 
 	if ((holding(x,y+1) .eq. 0.0) .and. (y .lt. grid)) then
-		fishgrowbase = fishgrowbase + fishgrow
+		fishlocal = fishlocal + 0.1
 	end if
 	
 	if ((holding(x,y-1) .eq. 0.0) .and. (y .gt. 1)) then
-		fishgrowbase = fishgrowbase + fishgrow
+		fishlocal = fishlocal + 0.1
 	end if
 
 	if ((holding(x+1,y+1) .eq. 0.0) .and. (x .lt. grid) .and. (y .lt. grid)) then
-		fishgrowbase = fishgrowbase + fishgrow
+		fishlocal = fishlocal + 0.1
 	end if
 
 	if ((holding(x-1,y-1) .eq. 0.0) .and. (x .gt. 1) .and. (y .gt. 1)) then
-		fishgrowbase = fishgrowbase + fishgrow
+		fishlocal = fishlocal + 0.1
 	end if
 	
 	if ((holding(x+1,y-1) .eq. 0.0) .and. (x .lt. grid) .and. (y .gt. 1)) then
-		fishgrowbase = fishgrowbase + fishgrow
+		fishlocal = fishlocal + 0.1
 	end if
 	
 	if ((holding(x-1,y+1) .eq. 0.0) .and. (x .gt. 1) .and. (y .lt. grid)) then
-		fishgrowbase = fishgrowbase + fishgrow
+		fishlocal = fishlocal + 0.1
 	end if
-!@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 
 ! Finalizes the population growth of fish, faster with more coral.
-fish = fish+sum(coral)*.001
+fish(x,y) = fish(x,y) + fishdelta(fishpop)
+write(*,*) fishpop, fishdelta(fishpop), fishlocal
 
 end subroutine
 	
@@ -231,7 +234,7 @@ use globalvars
 
 	real						:: modify				! Input variable to be modified
 	integer,intent(in)			:: i, j					! Looping integers
-	real						:: fisheat = 0.01		! Lowers input variable based on how much nearby fish eat the algae
+	real						:: fisheat = 0.08		! Lowers input variable based on how much nearby fish eat the algae
 	
 	! Checks for fish around algae and lowers the amount of coral destroyed by the algae
 	if(fish(i,j) .ne. 0.0) then

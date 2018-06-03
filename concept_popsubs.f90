@@ -77,36 +77,96 @@ counter = 0
 ! Random  grid point generation initialization
 call random_seed(put=seed)
 call random_number(temp)
-coordinate = grid*floor(temp)
+coordinate = floor(grid*temp)
 
 x = coordinate(1)
 y = coordinate(2)	
 	
+if (arrin(x,y) .ne. 0.0) then
+	arrin(x,y) = arrin(x,y)*tightclustermult*0.7
+end if
+
+
 	do j = x, x + distance, 1
 		
-		arrin(x,y+j) = arrin(x,y+j) + arrin(x,y+j)*disttrail*(distance-counter)
-		arrin(x,y-j) = arrin(x,y-j) + arrin(x,y-j)*disttrail*(distance-counter)
+		if (arrin(j,y) .ne. 0.0) then
 		
+			arrin(x,y+j) = arrin(x,y+j) + arrin(x,y+j)*disttrail*real(distance-counter)
+			arrin(x,y-j) = arrin(x,y-j) + arrin(x,y-j)*disttrail*real(distance-counter)
+		
+		end if
+
 		counter = counter + 1
-	
+
 	end do
 	
 	counter = 0
 	
 	do i = y, y + distance, 1
 	
-		arrin(x+i,y) = arrin(x+i,y) + arrin(x+i,y)*disttrail*(distance-counter)
-		arrin(x-i,y) = arrin(x-i,y) + arrin(x-i,y)*disttrail*(distance-counter)
+		if (arrin(x,i) .ne. 0.0) then
 		
-		counter = counter + 1
+			arrin(x+i,y) = arrin(x+i,y) + arrin(x+i,y)*disttrail*real(distance-counter)
+			arrin(x-i,y) = arrin(x-i,y) + arrin(x-i,y)*disttrail*real(distance-counter)
+	
+		end if
+		
+		counter = counter + 1		
 		
 	end do
 	
 end subroutine
 		
+subroutine newcoral
+
+use globalvars
+
+implicit none
+	real			:: coraltot, area
+	real			:: avgcoral, threshold
+	real			:: temp
+	real			:: coord(1:2)
+	integer			:: x, y
+	
+	
+coraltot  = sum(coral)
+area 	  = grid**2
+avgcoral  = coraltot/area
+threshold = 4.0
+
+if (avgcoral .ge. threshold) then
+	
+	call random_seed(put=seed)
+	call random_number(temp)
+
+	if (temp .ge. 0.7) then
+		call random_seed(put=seed)
+		call random_number(coord)
+		x = floor(grid*coord(1))
+		y = floor(grid*coord(2))
 		
+102		if (coral(x,y) .eq. 0.0) then
+			coral(x,y) = 1.2
+		else
+			x = x+1 ; y = y+1
+				
+				if (x .gt. grid) then
+					x = x - grid
+				end if	
+			
+				if (y .gt. grid) then
+					y = y - grid
+				end if
+			
+			goto 102
 		
+		end if
 		
+	end if
+
+end if
+		
+end subroutine	
 		
 
 

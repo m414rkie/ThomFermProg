@@ -35,6 +35,9 @@ implicit none
 	integer				:: i, j, t, k, n ! Looping integers; n is random seed holder
 	integer				:: numtime, clusnum	! Number of timesteps and clusters of coral
 
+50 format ("coraltime",1i2,".dat")		
+
+
 ! User input 
 write(*,*) "Enter the dimension of the grid (square):"
 read(*,*) grid
@@ -56,18 +59,8 @@ allocate(fish(grid,grid))
 ! Initializing grids
 coral = 0.0
 holding = 0.0
-
-! Legacy from initial program construction, mainly for testing small grids.
-!do i = 1, grid, 1
-	
-!	do j = 1, grid, 1
-		
-!		write(*,*) "grid value for ",i, ",", j
-!		read(*,*) coral(i,j)
-		
-!	end do
-
-!end do
+fgrowfact = 0.25
+fishconst = 5.0
 
 ! Generates a seed for use in populating layers
 call random_seed(size=n)
@@ -91,14 +84,14 @@ holding = coral
 
 write(*,*) "0.0 represents pure algae; greater than zero represents coral, higher number represents more coral"
 write(*,*) "Files are written as (x,y,z) where z is the population/biomass"
-!call printer(coral,grid)
 
 ! Initial disposition of coral/algae layer. 
 filename = "coralini.dat"
 call printtofile(coral)
 call fishdist(fish)
-!write(*,*) "fishes"
-!call printer(fish,grid)
+
+filename = "fishini.dat"
+call printtofile(fish)
 
 ! Outer loops iterates time, i and j iterate x and y respectively
 do t = 1, numtime, 1
@@ -112,10 +105,16 @@ do t = 1, numtime, 1
 				call neighborsum(i,j,holding,nearsum)
 				call growth(i,j,coral,coral)
 				call decay(i,j,coral)
+				call newcoral
 	
 			end do
 	
 		end do
+
+		if (mod(t,5) .eq. 0) then
+			write(filename,50) t
+			call printtofile(coral)
+		end if
 
  
  		holding = coral
@@ -125,6 +124,9 @@ end do
 ! Prints the final coral/algae layer after the number of timesteps is reached.
 filename = "coralfin.dat"
 call printtofile(coral)
+
+filename = "fishfin.dat"
+call printtofile(fish)
 
  
 end program
