@@ -59,10 +59,9 @@ subroutine potential
 ! Formulas derived from the thomas-fermi model as interpreted by Myers and Swiatecki
 ! Calls subroutine boolequad
 use globalvars
+use functions
 
 implicit none
-	real (kind=8)				:: sl, su, blo, bup, glo, gup
-	real (kind=8)				:: x, y							! Eqn variables
 	integer 					:: i, j							! Looping variables
 	real (kind=8), allocatable 	:: upperarr1(:), upperarr2(:)	! Arrays for first and second integration
 	real (kind=8), allocatable 	:: lowerarr1(:), lowerarr2(:)	! Arrays for first and second integration
@@ -71,14 +70,6 @@ implicit none
 	real (kind=8)				:: uquad, lquad					! Temp. holding variables for integration
 	real (kind=8)				:: dv1, dv2						! Step sizes for the iterated variables
 	real (kind=8)				:: pref, prefu					! Prefixes for the explicit portion of the pot. full equation
-
-! Equations used, l for unmixed matter, u for mixed
-bup(x,y) = betau*(abs(y-x)/momentumcurrent)**2
-blo(x,y) = betal*((abs(y-x)/momentumcurrent)**2)
-gup(x,y) = gammau*(momfin/abs(y-x))
-glo(x,y) = gammal*(momfin/abs(y-x))
-sl		 = sigmal*(((2.0*rhobar)/(rho0))**(2.0/3.0))
-su		 = sigmau*(((2.0*rhobar)/(rho0))**(2.0/3.0))
 
 
 ! Allocation statements, includes mixed and unmixed.
@@ -108,9 +99,10 @@ do i = 1, n, 1
 		mom2 = dv2*float(j)
 		
 		if (abs(mom1-mom2) .gt. 0.415) then
-
-			upperarr1(j) = (matchoice)*(alphau - bup(mom1,mom2)  - su + gup(mom1,mom2))*(mom1**2)*(mom2**2)
-			lowerarr1(j) = (alphal - blo(mom1,mom2)  - sl + glo(mom1,mom2))*(mom1**2)*(mom2**2)
+		
+			
+			upperarr1(j) = (matchoice)*potmixed(mom1,mom2)
+			lowerarr1(j) = potunmixed(mom1,mom2)
 		
 		end if
 		
@@ -310,10 +302,10 @@ implicit none
 	real (kind=8)		:: pfp, pfe
 	real (kind=8)		:: protchem, elecchem
 
-write(*,*) "Input Density to use in chemical potential test:"
-read(*,*) rho
+!write(*,*) "Input Density to use in chemical potential test:"
+!read(*,*) rho
 
-pfp = (3.0*(pi**2)*rho)**(1.0/3.0)
+pfp = (3.0*(pi**2)*rho/2.0)**(1.0/3.0)
 
 pfe = pfp
 exitcondition = 1
@@ -331,7 +323,8 @@ neutchem = protchem + elecchem
 
 write(*,*) "Proton potential:", protchem
 write(*,*) "Electron potential:", elecchem
-write(*,*) "Proton density:", rho
+write(*,*) "Proton density:", rho/2.0
+write(*,*) "Proton Fermi momentum:", pfp
 
 call root
 
