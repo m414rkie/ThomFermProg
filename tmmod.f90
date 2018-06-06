@@ -16,8 +16,6 @@ module globalvars
 	real  		(kind=8), allocatable			:: epsrho(:,:), pressure(:,:), enerray(:,:)
 	character(1)								:: densenum, densenumparse, mattype, mattypeparse
 	character(50)								:: pressdense, pressrho, rhorange
-	real		(kind=8)						:: singlenergy, neutchem
-
 
 end module
 
@@ -62,6 +60,17 @@ implicit none
 potmixed = (alphau - bup(x,y)  - su + gup(x,y))*(x**2)*(y**2)
 
 end function potmixed
+
+real (kind=8) function kinet(in)
+
+use globalvars
+
+implicit none
+	real (kind=8)	:: in
+	
+kinet = (in**2)/(2.0*mass)
+
+end function kinet
 
 end module
 
