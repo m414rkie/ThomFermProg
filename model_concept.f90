@@ -121,6 +121,8 @@ do t = 1, numtime, 1
 
 end do
 
+write(*,*) numnew
+
 ! Prints the final coral/algae layer after the number of timesteps is reached.
 filename = "coralfin.dat"
 call printtofile(coral)

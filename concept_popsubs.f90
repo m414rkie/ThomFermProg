@@ -144,6 +144,7 @@ if (avgcoral .ge. threshold) then
 		call random_number(coord)
 		x = floor(grid*coord(1))
 		y = floor(grid*coord(2))
+		numnew = numnew + 1
 		
 102		if (coral(x,y) .eq. 0.0) then
 			coral(x,y) = 1.2
@@ -168,7 +169,48 @@ end if
 		
 end subroutine	
 		
+subroutine bacteriapop
 
+use globalvars
+
+implicit none
+	real		:: avgpop
+	integer		:: i, j
+	real		:: dist(10), randini(10)
+	integer		:: randfin(10)
+	real		:: r
+	integer		:: in
+	
+write(*,*) "Please input the average population per (volume) as  (num)e(exp), typicall values would be 1.0e12"
+read(*,*) avgpop
+
+allocate(bacteria(4*grid,4*grid))
+
+dist = (/0.96,0.97,0.98,0.99,1.0,1.1,1.2,1.3,1.4,1.5) 
+
+call random_number(randini)
+randfin = floor(10.0*randini)
+
+bacteria%totalpop = avgpop
+
+do i = 1, 4*grid, 1
+
+	do j = 1, 4*grid, 1
+		
+		call random_number(r)
+		in = floor(10*r)
+		
+		bacteria%totalpop = bacteria%totalpop*in
+		
+	end do
+
+end do
+		
+
+
+
+
+end subroutine
 
 
 
