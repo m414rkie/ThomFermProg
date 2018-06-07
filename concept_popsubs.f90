@@ -200,7 +200,8 @@ do i = 1, 4*grid, 1
 		call random_number(r)
 		in = floor(10*r)
 		
-		bacteria%totalpop = bacteria%totalpop*in
+		bacteria(i,j)%totalpop = bacteria%totalpop*in
+		bacteria(i,j)%numspecies = numspec(bacteria(i,j)%totalpop)
 		
 	end do
 
