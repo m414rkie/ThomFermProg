@@ -32,11 +32,15 @@ implicit none
 	real (kind=8)	:: x, y, a, b
 	real (kind=8)	:: blo, glo, sl
 	
-	
+
 	blo(a,b) = betal*((abs(b-a)/momentumcurrent)**2)
 	glo(a,b) = gammal*(momfin/abs(b-a))
 	sl		 = sigmal*(((2.0*rhobar)/(rho0))**(2.0/3.0))
 
+	
+	if (abs(y-x) .lt. 0.415) then
+		potunmixed = 0.0
+	end if
 
 potunmixed = (alphal - blo(x,y)  - sl + glo(x,y))*(x**2)*(y**2)
 

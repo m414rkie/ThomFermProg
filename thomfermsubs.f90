@@ -294,11 +294,12 @@ use globalvars
 use functions
 
 implicit none
-	real (kind=8)		:: pfp, pfe, pfn
-	real (kind=8)		:: protchem, elecchem, neutchem
-	integer				:: i
-	real (kind=8)		:: singleprot, singleneut
-	real (kind=8) 		:: neutdense
+	real (kind=8)					:: pfp, pfe, pfn, pfx, pfy
+	real (kind=8)					:: protchem, elecchem, neutchem
+	integer							:: i, arrval
+	real (kind=8)					:: singleprot, singleneut
+	real (kind=8) 					:: neutdense
+	real (kind=8), allocatable		:: neutchemarr(:),protchemarr(:)
 
 
 !write(*,*) "Input Density to use in chemical potential test:"
@@ -311,16 +312,34 @@ elecchem = ((pfe**2) + (0.511)**2)**(1.0/2.0)
 neutchem = 0.0
 pfn = 0.0
 
-	neutchem = potunmixed(pfn,pfn) + potmixed(pfp,pfn) + kinet(pfn)
-	protchem = potunmixed(pfp,pfp) + potmixed(pfn,pfp) + kinet(pfp)
+arrval = ceiling(pfp/dv)
+allocate(neutchemarr(arrval))
+allocate(protchemarr(arrval))
 
-do while (neutchem .ne. (protchem + elecchem))
+neutchemarr = 0.0
+protchemarr = 0.0
 
-	neutchem = potunmixed(pfn,pfn) + potmixed(pfp,pfn) + kinet(pfn)
-	protchem = potunmixed(pfp,pfp) + potmixed(pfn,pfp) + kinet(pfp)
-	pfn = pfn + dv
-
+105 do i = 1, arrval, 1
+ pfx = dv*float(i)
+ 
+ 	if (abs(pfn-pfx) .gt. 0.415) then
+		neutchemarr(i) = potunmixed(pfn,pfn)
+		protchemarr(i) = potunmixed(pfn,pfx)
+	end if
+	
 end do
+
+call boolequad(neutchemarr,neutchem)
+call boolequad(protchemarr,protchem)
+
+neutchem = neutchem + kinet(pfn) + potmixed(pfp,pfn)
+protchem = protchem + kinet(pfp) + potmixed(pfp,pfn)
+write(*,*) "things", protchem
+
+if (abs(neutchem - (protchem + elecchem)) .gt. 0.01) then
+	pfn = pfn + dv
+	goto 105
+end if
 
 neutdense = (pfn**3)/(3.0*(pi**2))
 
