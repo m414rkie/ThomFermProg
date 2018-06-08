@@ -93,6 +93,8 @@ call fishdist(fish)
 filename = "fishini.dat"
 call printtofile(fish)
 
+call bacteriapop
+
 ! Outer loops iterates time, i and j iterate x and y respectively
 do t = 1, numtime, 1
 

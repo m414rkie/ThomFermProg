@@ -112,6 +112,7 @@ implicit none
 fishlocal = 0.0
 fishpop = fish(x,y)
 
+write(*,*) "Growing coral bed."
 	
 	! Checks neighboring gridpoints for fish population and grows faster with neighbors.
 	! Also checks boundaries to help with edge effects.
@@ -156,7 +157,7 @@ fishpop = fish(x,y)
 
 ! Finalizes the population growth of fish, faster with more coral.
 fish(x,y) = fish(x,y) + fishdelta(fishpop)
-write(*,*) fishpop, fishdelta(fishpop), fishlocal
+!write(*,*) fishpop, fishdelta(fishpop), fishlocal
 
 end subroutine
 	
@@ -178,6 +179,9 @@ implicit none
 	algcount = 0.0
 	decayconst = 0.25
 	
+	
+write(*,*) "Performing coral/algae interaction"
+
 	! Checks for algae around the input gridpoint and out-of-bounds
 	if ((holding(x-1,y) .eq. 0.0) .and. (x .gt. 1)) then
 		algcount = algcount + 1.0
@@ -235,6 +239,8 @@ use globalvars
 	real						:: modify				! Input variable to be modified
 	integer,intent(in)			:: i, j					! Looping integers
 	real						:: fisheat = 0.08		! Lowers input variable based on how much nearby fish eat the algae
+	
+write(*,*) "The fish are helping the coral."
 	
 	! Checks for fish around algae and lowers the amount of coral destroyed by the algae
 	if(fish(i,j) .ne. 0.0) then

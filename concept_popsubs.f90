@@ -19,6 +19,8 @@ fishtot = coralfishmult*coraltot
 ! Distribution across grid
 arrout = fishtot/(grid**2)
 
+write(*,*) "Populating the initial fish layer."
+
 end subroutine
 
 subroutine hppop(arrin)
@@ -31,6 +33,8 @@ implicit none
 	real,dimension(grid,grid)			    :: arrin			! Input arrays
 	integer									:: i, j				! Looping integers
 	
+write(*,*) "Populating the initial coral layer."
+
 ! Populates layer with random numbers between zero and one.	
 call random_seed(put=seed)
 call random_number(arrin)
@@ -132,7 +136,7 @@ implicit none
 coraltot  = sum(coral)
 area 	  = grid**2
 avgcoral  = coraltot/area
-threshold = 4.0
+threshold = 1.0
 
 if (avgcoral .ge. threshold) then
 	
@@ -145,6 +149,7 @@ if (avgcoral .ge. threshold) then
 		x = floor(grid*coord(1))
 		y = floor(grid*coord(2))
 		numnew = numnew + 1
+		write(*,*) "New coral growth."
 		
 102		if (coral(x,y) .eq. 0.0) then
 			coral(x,y) = 1.2
@@ -172,43 +177,62 @@ end subroutine
 subroutine bacteriapop
 
 use globalvars
+use functions
 
 implicit none
-	real		:: avgpop
-	integer		:: i, j
-	real		:: dist(10), randini(10)
-	integer		:: randfin(10)
-	real		:: r
-	integer		:: in
+	real (kind=16)		:: avgpop
+	integer				:: i, j
+	real				:: dist(10), randini(10)
+	integer				:: randfin(10)
+	real				:: r
+	integer				:: in, percent
 	
 write(*,*) "Please input the average population per (volume) as  (num)e(exp), typicall values would be 1.0e12"
 read(*,*) avgpop
 
+write(*,*) "Populating the initial bacteria layer."
+
 allocate(bacteria(4*grid,4*grid))
 
-dist = (/0.96,0.97,0.98,0.99,1.0,1.1,1.2,1.3,1.4,1.5) 
+percent = 0
+dist = (/0.6,0.7,0.8,0.9,1.0,1.01,1.02,1.03,1.04,1.05/) 
 
 call random_number(randini)
 randfin = floor(10.0*randini)
 
-bacteria%totalpop = avgpop
+bacteria%totalpop = int(avgpop)
+
+open(unit=13,file="bactini.dat",position="append",status="replace")
 
 do i = 1, 4*grid, 1
 
 	do j = 1, 4*grid, 1
 		
 		call random_number(r)
-		in = floor(10*r)
+		in = floor(1+10*r)
 		
-		bacteria(i,j)%totalpop = bacteria%totalpop*in
+		bacteria(i,j)%totalpop = bacteria(i,j)%totalpop*real(in)
 		bacteria(i,j)%numspecies = numspec(bacteria(i,j)%totalpop)
+		
+		write(13,*) i, j, bacteria(i,j)%totalpop, bacteria(i,j)%numspecies
+		
+		if ((i .eq. grid) .and. (percent .ne. 1)) then
+			write(*,*) "25%"
+			percent = 1
+		else if ((i .eq. 2*grid) .and. (percent .ne. 2)) then
+			write(*,*) "50%"
+			percent = 2
+		else if ((i .eq. 3*grid) .and. (percent .ne. 3)) then
+			write(*,*) "75%"
+			percent = 3
+		else if (i .eq. 4*grid) then
+			write(*,*) "Complete"
+		end if
 		
 	end do
 
 end do
 		
-
-
 
 
 end subroutine
