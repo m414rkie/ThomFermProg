@@ -86,6 +86,8 @@ coordinate = floor(grid*temp)
 x = coordinate(1)
 y = coordinate(2)	
 	
+write(*,*) "Cluster at:", x, y
+
 if (arrin(x,y) .ne. 0.0) then
 	arrin(x,y) = arrin(x,y)*tightclustermult*0.7
 end if
@@ -149,7 +151,7 @@ if (avgcoral .ge. threshold) then
 		x = floor(grid*coord(1))
 		y = floor(grid*coord(2))
 		numnew = numnew + 1
-		write(*,*) "New coral growth."
+		write(*,*) "New coral growth at:", x, y
 		
 102		if (coral(x,y) .eq. 0.0) then
 			coral(x,y) = 1.2
@@ -180,59 +182,44 @@ use globalvars
 use functions
 
 implicit none
-	real (kind=16)		:: avgpop
-	integer				:: i, j
-	real				:: dist(10), randini(10)
+	real (kind=16)		:: avgpop, avgspec
+	integer				:: i, j, k, l
+	real				:: randini
 	integer				:: randfin(10)
-	real				:: r
-	integer				:: in, percent
+	real				:: r, factor, deviation, average
+	integer				:: in, percent, maxspec
+	real (kind=16)		:: spectopop(500000), probability(500000)
+
+factor = 2.0
+maxspec = 500000
+spectopop(1) = factor
+avgspec = 350000.0
+deviation = 25000.0
+average = 350000.0
+
+do k = 2, maxspec, 1
+	spectopop(k) = 1.00004**k + spectopop(k-1)
+end do
+
+do l = 1, 500000, 1
+
+probability(l) = (1.0/((2.0*pi*(deviation**2))**(1.0/2.0)))*exp(-((float(l)-average)**2)/(2.0*(deviation**2)))
+
+end do
+
+do i = 1, 2*grid, 1
 	
-write(*,*) "Please input the average population per (volume) as  (num)e(exp), typicall values would be 1.0e12"
-read(*,*) avgpop
-
-write(*,*) "Populating the initial bacteria layer."
-
-allocate(bacteria(4*grid,4*grid))
-
-percent = 0
-dist = (/0.6,0.7,0.8,0.9,1.0,1.01,1.02,1.03,1.04,1.05/) 
-
-call random_number(randini)
-randfin = floor(10.0*randini)
-
-bacteria%totalpop = int(avgpop)
-
-open(unit=13,file="bactini.dat",position="append",status="replace")
-
-do i = 1, 4*grid, 1
-
-	do j = 1, 4*grid, 1
+	do j = 1, 2*grid
 		
-		call random_number(r)
-		in = floor(1+10*r)
-		
-		bacteria(i,j)%totalpop = bacteria(i,j)%totalpop*real(in)
-		bacteria(i,j)%numspecies = numspec(bacteria(i,j)%totalpop)
-		
-		write(13,*) i, j, bacteria(i,j)%totalpop, bacteria(i,j)%numspecies
-		
-		if ((i .eq. grid) .and. (percent .ne. 1)) then
-			write(*,*) "25%"
-			percent = 1
-		else if ((i .eq. 2*grid) .and. (percent .ne. 2)) then
-			write(*,*) "50%"
-			percent = 2
-		else if ((i .eq. 3*grid) .and. (percent .ne. 3)) then
-			write(*,*) "75%"
-			percent = 3
-		else if (i .eq. 4*grid) then
-			write(*,*) "Complete"
-		end if
+		call random_number(randini)
+
+		randini = 500000.0*randini + 200000.0*(1.0-randini)
+
+		bacterialayer(i,j)%numpop = probability(floor(randini))
 		
 	end do
 
 end do
-		
 
 
 end subroutine

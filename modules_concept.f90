@@ -19,6 +19,7 @@ end type bacteriavar
 	real									:: fishconst, fishlocal, fgrowfact
 	integer									:: numnew = 0
 	real									:: popconstant
+	real									:: pi = acos(-1.0)
 	
 end module
 
