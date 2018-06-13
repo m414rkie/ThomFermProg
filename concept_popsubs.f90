@@ -10,7 +10,6 @@ implicit none
 	real,dimension(grid,grid),intent(out)	:: arrout				! Output array
 	real									:: coraltot, fishtot	! Summed values of the arrays
 	real									:: coralfishmult = 1.5	! Multiplies coral 'biomass' 
-	
 
 ! Initializing 
 coraltot = sum(coral)
@@ -34,11 +33,13 @@ implicit none
 	integer									:: i, j				! Looping integers
 	
 write(*,*) "Populating the initial coral layer."
+! Generates a seed for use in populating layers
 
-! Populates layer with random numbers between zero and one.	
-call random_seed(put=seed)
-call random_number(arrin)
-	
+		call random_seed(size=randall)
+		call system_clock(count=clock)
+		seed = clock + 34*(/(i-1,i=1,randall)/)
+		call random_number(arrin)
+
 ! Removes coral from the grid based on the percent cover of the total grid. This also determines the 
 ! amount of algae.
 	do i = 1, grid, 1
@@ -78,9 +79,11 @@ use globalvars
 disttrail = tightclustermult/real(distance)
 counter = 0
 
-! Random  grid point generation initialization
-call random_seed(put=seed)
-call random_number(temp)
+		call random_seed(size=randall)
+		call system_clock(count=clock)
+		seed = clock + 34*(/(i-1,i=1,randall)/)		
+		call random_number(temp)
+
 coordinate = floor(grid*temp)
 
 x = coordinate(1)
@@ -132,42 +135,58 @@ implicit none
 	real			:: avgcoral, threshold
 	real			:: temp
 	real			:: coord(1:2)
-	integer			:: x, y
+	integer			:: x, y, i
 	
 	
 coraltot  = sum(coral)
 area 	  = grid**2
 avgcoral  = coraltot/area
-threshold = 1.0
+threshold = 4.0
+
+
 
 if (avgcoral .ge. threshold) then
 	
-	call random_seed(put=seed)
+			call random_seed(size=randall)
+
+		call system_clock(count=clock)
+
+		seed = clock + 34*(/(i-1,i=1,randall)/)
+	
 	call random_number(temp)
 
 	if (temp .ge. 0.7) then
-		call random_seed(put=seed)
+
+		call random_seed(size=randall)
+
+		call system_clock(count=clock)
+
+		seed = clock + 34*(/(i-1,i=1,randall)/)
+	
 		call random_number(coord)
+		
 		x = floor(grid*coord(1))
 		y = floor(grid*coord(2))
-		numnew = numnew + 1
-		write(*,*) "New coral growth at:", x, y
 		
-102		if (coral(x,y) .eq. 0.0) then
+		numnew = numnew + 1
+		
+		write(*,*) "New coral growth at:", x, y
+
+		if (coral(x,y) .eq. 0.0) then
 			coral(x,y) = 1.2
 		else
 			x = x+1 ; y = y+1
 				
 				if (x .gt. grid) then
-					x = x - grid
+					x = x - floor(0.5*coord(1))
 				end if	
 			
 				if (y .gt. grid) then
-					y = y - grid
+					y = y - floor(0.5*coord(2))
 				end if
 			
-			goto 102
-		
+			coral(x,y) = 1.2
+					
 		end if
 		
 	end if
@@ -182,45 +201,46 @@ use globalvars
 use functions
 
 implicit none
-	real (kind=16)		:: avgpop, avgspec
-	integer				:: i, j, k, l
-	real				:: randini
-	integer				:: randfin(10)
-	real				:: r, factor, deviation, average
-	integer				:: in, percent, maxspec
-	real (kind=16)		:: spectopop(500000), probability(500000)
-
-factor = 2.0
-maxspec = 500000
-spectopop(1) = factor
-avgspec = 350000.0
-deviation = 25000.0
-average = 350000.0
-
-do k = 2, maxspec, 1
-	spectopop(k) = 1.00004**k + spectopop(k-1)
-end do
-
-do l = 1, 500000, 1
-
-probability(l) = (1.0/((2.0*pi*(deviation**2))**(1.0/2.0)))*exp(-((float(l)-average)**2)/(2.0*(deviation**2)))
-
-end do
-
-do i = 1, 2*grid, 1
+	real 				:: avgpop, avgspec
+	real				:: coord(2)
+	real				:: average, area
+	integer				:: i, j
 	
-	do j = 1, 2*grid
-		
-		call random_number(randini)
+write(*,*) "Populating initial Bacteria layer."
+avgspec = 100.0
+avgpop = 1000.0
+area = (2*float(grid))**2
+average = 0.0
 
-		randini = 500000.0*randini + 200000.0*(1.0-randini)
+bacteria%totalpop = int(avgpop)
+bacteria%numspecies = 1
 
-		bacterialayer(i,j)%numpop = probability(floor(randini))
-		
-	end do
+do while (average .lt. avgspec)
+	
+			
+					call random_seed(size=randall)
+
+		call system_clock(count=clock)
+
+		seed = clock + 34*(/(i-1,i=1,randall)/)
+			
+			call random_number(coord)
+			
+			coord = 2*grid*coord
+			
+			bacteria(floor(coord(1)),floor(coord(2)))%numspecies = bacteria(floor(coord(1)),floor(coord(2)))%numspecies + 1
+			
+			average = float(sum(bacteria%numspecies))/area
 
 end do
 
+open(unit=14,file="bactlayer.dat",status="replace",position="append")
+	
+	do i = 1, 2*grid, 1
+		do j = 1, 2*grid, 1
+			write(14,*) i, j, bacteria(i,j)%numspecies, bacteria(i,j)%totalpop
+		end do
+	end do
 
 end subroutine
 

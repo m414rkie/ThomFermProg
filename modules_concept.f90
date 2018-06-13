@@ -4,7 +4,7 @@ implicit none
 
 type bacteriavar
 	sequence
-	integer (kind=16)	:: totalpop
+	integer				:: totalpop
 	integer 			:: numspecies
 end type bacteriavar
 
@@ -20,6 +20,7 @@ end type bacteriavar
 	integer									:: numnew = 0
 	real									:: popconstant
 	real									:: pi = acos(-1.0)
+	integer									:: randall, values(8)
 	
 end module
 
