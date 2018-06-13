@@ -38,6 +38,7 @@ write(*,*) "Populating the initial coral layer."
 		call random_seed(size=randall)
 		call system_clock(count=clock)
 		seed = clock + 34*(/(i-1,i=1,randall)/)
+		call random_seed(put=seed)
 		call random_number(arrin)
 
 ! Removes coral from the grid based on the percent cover of the total grid. This also determines the 
@@ -69,7 +70,7 @@ use globalvars
 	integer									:: counter					! Lowers the value of cluster as it gets further from center
 	real									:: temp(1:2)				! Holds randomly generated numbers 
 	integer									:: coordinate(1:2)			! Holds x,y coordinates of center of cluster
-	real									:: tightclustermult = 2.5	! Determines the increase in coral in cluster
+	real									:: tightclustermult = 1.5	! Determines the increase in coral in cluster
 	real									:: disttrail				! Spreads the increase across the cluster.
 																		!  interacts with counter to linearly decrease the 
 																		!  increase in coral with distance from center
@@ -81,7 +82,8 @@ counter = 0
 
 		call random_seed(size=randall)
 		call system_clock(count=clock)
-		seed = clock + 34*(/(i-1,i=1,randall)/)		
+		seed = clock + 34*(/(i-1,i=1,randall)/)	
+		call random_seed(put=seed)
 		call random_number(temp)
 
 coordinate = floor(grid*temp)
@@ -147,22 +149,18 @@ threshold = 4.0
 
 if (avgcoral .ge. threshold) then
 	
-			call random_seed(size=randall)
-
-		call system_clock(count=clock)
-
-		seed = clock + 34*(/(i-1,i=1,randall)/)
-	
+	call random_seed(size=randall)
+	call system_clock(count=clock)
+	seed = clock + 34*(/(i-1,i=1,randall)/)
+	call random_seed(put=seed)
 	call random_number(temp)
 
 	if (temp .ge. 0.7) then
 
 		call random_seed(size=randall)
-
 		call system_clock(count=clock)
-
 		seed = clock + 34*(/(i-1,i=1,randall)/)
-	
+		call random_seed(put=seed)
 		call random_number(coord)
 		
 		x = floor(grid*coord(1))
@@ -218,13 +216,12 @@ bacteria%numspecies = 1
 do while (average .lt. avgspec)
 	
 			
-					call random_seed(size=randall)
-
-		call system_clock(count=clock)
-
-		seed = clock + 34*(/(i-1,i=1,randall)/)
-			
+			call random_seed(size=randall)
+			call system_clock(count=clock)
+			seed = clock + 34*(/(i-1,i=1,randall)/)
+			call random_seed(put=seed)
 			call random_number(coord)
+		
 			
 			coord = 2*grid*coord
 			
