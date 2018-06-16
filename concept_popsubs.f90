@@ -80,14 +80,17 @@ use globalvars
 disttrail = tightclustermult/real(distance)
 counter = 0
 
+call random_seed(size=randall)
+call system_clock(count_rate=clock)
+seed = clock + 34*(/(i-1,i=1,randall)/)	
+
 do k=1, clusnum, 1
 
-		call random_seed(size=randall)
-		call system_clock(count_rate=clock)
-		seed = clock + 34*(/(i-1,i=1,randall)/)	
 		call random_seed(put=seed)
 		call random_number(temp)
-		write(*,*) seed
+		
+		seed = seed*2 - 600
+		
 coordinate = floor(grid*temp)
 
 x = coordinate(1)
