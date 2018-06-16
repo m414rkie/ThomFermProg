@@ -32,8 +32,8 @@ PROGRAM concept
 use globalvars
 
 implicit none
-	integer				:: i, j, t, k  ! Looping integers; n is random seed holder
-	integer				:: numtime, clusnum	! Number of timesteps and clusters of coral
+	integer				:: i, j, t ! Looping integers; n is random seed holder
+	integer				:: numtime ! Number of timesteps and clusters of coral
 
 50 format ("coraltime",1i2,".dat")		
 
@@ -56,6 +56,7 @@ allocate(coral(grid,grid))
 allocate(holding(grid,grid))
 allocate(fish(grid,grid))
 allocate(bacteria(2*grid,2*grid))
+allocate(kbact(2*grid,2*grid))
 
 ! Initializing grids
 coral = 0.0
@@ -66,11 +67,7 @@ fishconst = 5.0
 ! Populates the coral/algae layer
 call hppop(coral)
 
-do k=1, clusnum, 1
-
-	call tightcluster(coral)
-
-end do
+call tightcluster(coral)
 
 ! Increases overal population of coral as each gridpoint will be between zero and one beforehand
 coral = 2.0*coral
@@ -89,6 +86,8 @@ filename = "fishini.dat"
 call printtofile(fish)
 
 call bacteriapop
+
+call kgrid
 
 ! Outer loops iterates time, i and j iterate x and y respectively
 do t = 1, numtime, 1

@@ -300,9 +300,64 @@ end do
 close(11)
 
 end subroutine
-	
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	
+subroutine kgrid
+
+use globalvars
+
+implicit none
+	integer		:: i, j, k, l
+	real		:: algaemod, coralmod, barriermod
+
+
+kbact = avgpop
+algaemod = 0.7
+coralmod = 1.2
+barriermod = 1.3
+
+
+do i = 1, grid, 1
+	
+	do j = 1, grid, 1
+	
+		if (coral(i,j) .ne. 0) then 
+			kbact(2*i-1,2*j-1) = kbact(2*i-1,2*j-1)*coralmod
+			kbact(2*i,2*j) = kbact(2*i,2*j)*coralmod
+		else if (coral(i,j) .eq. 0) then
+			kbact(2*i-1,2*j-1) = kbact(2*i-1,2*j-1)*algaemod
+			kbact(2*i,2*j) = kbact(2*i,2*j)*algaemod
+		end if
+				
+		if ((coral(i,j) .ne. 0) .and. (coral(i+1,j) .eq. 0)) then
+			kbact(2*i,2*j) = kbact(2*i,2*j)*barriermod
+			kbact(2*i+1,2*j) = kbact(2*i+1,2*j)*barriermod
+		end if
+		
+		if ((coral(i,j) .ne. 0) .and. (coral(i,j+1) .eq. 0)) then
+			kbact(2*i,2*j) = kbact(2*i,2*j)*barriermod
+			kbact(2*i,2*j+1) = kbact(2*i,2*j+1)*barriermod
+		end if
+		
+		if (((coral(i,j) .ne. 0) .and. (coral(i,j+1) .eq.0)) .and. ((2*j .lt. 2*grid) .and. (2*i .lt. grid))) then
+			kbact(2*i,2*j+1) = kbact(2*i,2*j+1)*barriermod
+		end if		
+	
+	end do
+	
+end do
+
+
+open(unit=16, file="kbact.dat", position="append", status="replace")
+
+do i = 1, 2*grid, 1
+	do j = 1, 2*grid, 1
+		write(16,*) i, j, kbact(i,j)
+	end do
+end do
+
+end subroutine
 	
 	
 	

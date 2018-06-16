@@ -66,7 +66,7 @@ subroutine tightcluster(arrin)
 use globalvars
 
 	real,dimension(grid,grid)				:: arrin					! Input array
-	integer									:: i,j,x,y					! Looping integers
+	integer									:: i,j,x,y, k				! Looping integers
 	integer									:: counter					! Lowers the value of cluster as it gets further from center
 	real									:: temp(1:2)				! Holds randomly generated numbers 
 	integer									:: coordinate(1:2)			! Holds x,y coordinates of center of cluster
@@ -80,12 +80,14 @@ use globalvars
 disttrail = tightclustermult/real(distance)
 counter = 0
 
+do k=1, clusnum, 1
+
 		call random_seed(size=randall)
-		call system_clock(count=clock)
+		call system_clock(count_rate=clock)
 		seed = clock + 34*(/(i-1,i=1,randall)/)	
 		call random_seed(put=seed)
 		call random_number(temp)
-
+		write(*,*) seed
 coordinate = floor(grid*temp)
 
 x = coordinate(1)
@@ -126,6 +128,8 @@ end if
 		
 	end do
 	
+end do
+	
 end subroutine
 		
 subroutine newcoral
@@ -155,6 +159,8 @@ if (avgcoral .ge. threshold) then
 	call random_seed(put=seed)
 	call random_number(temp)
 
+
+
 	if (temp .ge. 0.7) then
 
 		call random_seed(size=randall)
@@ -162,7 +168,7 @@ if (avgcoral .ge. threshold) then
 		seed = clock + 34*(/(i-1,i=1,randall)/)
 		call random_seed(put=seed)
 		call random_number(coord)
-		
+				
 		x = floor(grid*coord(1))
 		y = floor(grid*coord(2))
 		
@@ -199,7 +205,7 @@ use globalvars
 use functions
 
 implicit none
-	real 				:: avgpop, avgspec
+	real 				:: avgspec
 	real				:: coord(2)
 	real				:: average, area
 	integer				:: i, j
@@ -221,7 +227,6 @@ do while (average .lt. avgspec)
 			seed = clock + 34*(/(i-1,i=1,randall)/)
 			call random_seed(put=seed)
 			call random_number(coord)
-		
 			
 			coord = 2*grid*coord
 			

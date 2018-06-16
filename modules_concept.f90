@@ -8,9 +8,10 @@ type bacteriavar
 	integer 			:: numspecies
 end type bacteriavar
 
-	integer									:: grid									! Array size
+	integer									:: grid, clusnum						! Array size
 	real									:: norm, nearsum, test					! Variables for interactions
 	real, allocatable						:: holding(:,:), coral(:,:), fish(:,:)  ! Layer names
+	real, allocatable						:: kbact(:,:)							! Holds carrying capacity for bacteria
 	type (bacteriavar) , allocatable		:: bacteria(:,:)						! Layer names
 	integer, allocatable					:: seed(:)								! Random number holding array
 	integer									:: clock, distance						! System time and radial distance of coral clusters
@@ -21,6 +22,7 @@ end type bacteriavar
 	real									:: popconstant
 	real									:: pi = acos(-1.0)
 	integer									:: randall, values(8)
+	real									:: avgpop
 	
 end module
 
