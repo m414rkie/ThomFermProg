@@ -359,9 +359,60 @@ end do
 
 end subroutine
 	
+subroutine diffuse(arrin,dime,delta)
+
+use globalvars
+
+implicit none
+	integer, intent(in)						:: dime
+	real, dimension(dime,dime), intent(in)	:: arrin
+	real, dimension(dime,dime)				:: delta
+	integer									:: i, j
+	real									:: diffco
 	
 	
+diffco = 0.1
+delta = 0.0
 	
+do i = 1, dime, 1
+	
+	do j = 1, dime, 1
+		
+		if ((arrin(i,j) .gt. arrin(i+1,j)) .and. (i .lt. dime)) then
+	
+			delta(i+1,j) = delta(i+1,j) +  diffco*(arrin(i,j) - arrin(i+1,j))
+			delta(i,j) = delta(i,j) - diffco*(arrin(i,j) - arrin(i+1,j))
+		
+		end if
+		
+		if ((arrin(i,j) .gt. arrin(i-1,j)) .and. (i .ne. 1)) then
+		
+			delta(i-1,j) = delta(i-1,j) + diffco*(arrin(i,j) - arrin(i-1,j))
+			delta(i,j) = delta(i,j) - diffco*(arrin(i,j) - arrin(i-1,j))
+		
+		end if
+		
+		if ((arrin(i,j) .gt. arrin(i,j+1)) .and. (j .lt. dime)) then
+			
+			delta(i,j+1) = delta(i,j+1) + diffco*(arrin(i,j) - arrin(i,j+1))
+			delta(i,j) = delta(i,j) - diffco*(arrin(i,j) - arrin(i,j+1))
+			
+		end if
+		
+		if ((arrin(i,j) .gt. arrin(i,j-1)) .and. (j .ne. 1)) then
+			
+			delta(i,j-1) = delta(i,j-1) + diffco*(arrin(i,j) - arrin(i,j-1))
+			delta(i,j) = delta(i,j) - diffco*(arrin(i,j) - arrin(i,j-1))
+			
+		end if
+		
+	end do
+	
+end do
+
+arrin = arrin + delta
+
+end subroutine
 	
 	
 	

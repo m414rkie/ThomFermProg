@@ -57,6 +57,7 @@ allocate(holding(grid,grid))
 allocate(fish(grid,grid))
 allocate(bacteria(2*grid,2*grid))
 allocate(kbact(2*grid,2*grid))
+allocate(delbactpop(2*grid,2*grid))
 
 ! Initializing grids
 coral = 0.0

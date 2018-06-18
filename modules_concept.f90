@@ -13,6 +13,7 @@ end type bacteriavar
 	real, allocatable						:: holding(:,:), coral(:,:), fish(:,:)  ! Layer names
 	real, allocatable						:: kbact(:,:)							! Holds carrying capacity for bacteria
 	type (bacteriavar) , allocatable		:: bacteria(:,:)						! Layer names
+	real, allocatable						:: delbactpop(:,:)						! Delta layer for bact. pop. change
 	integer, allocatable					:: seed(:)								! Random number holding array
 	integer									:: clock, distance						! System time and radial distance of coral clusters
 	character*20							:: filename								! Changes for what is being put into the file
