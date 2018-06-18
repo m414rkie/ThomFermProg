@@ -50,6 +50,8 @@ write(*,*) "Number of coral clusters?"		! Currently
 read(*,*) clusnum
 write(*,*) "Please input distance for the tightly clustered coral clusters:"
 read(*,*) distance
+write(*,*) "Maximum number of bacteria species?"
+read(*,*) maxspec
 
 ! Allocation statements, error checking coming soon.
 allocate(coral(grid,grid))
@@ -88,7 +90,6 @@ call printtofile(fish)
 
 call bacteriapop
 
-call kgrid
 
 ! Outer loops iterates time, i and j iterate x and y respectively
 do t = 1, numtime, 1
@@ -103,6 +104,11 @@ do t = 1, numtime, 1
 				call growth(i,j,coral,coral)
 				call decay(i,j,coral)
 				call newcoral
+				call kgrid
+				call bactgrow
+				call diffuse(bacteria%totalpop,2*grid,delbactpop)
+				call mixing(bacteria%numspecies,2*grid)
+				
 	
 			end do
 	

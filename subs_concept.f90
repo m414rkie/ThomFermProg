@@ -348,16 +348,46 @@ do i = 1, grid, 1
 	
 end do
 
-
-open(unit=16, file="kbact.dat", position="append", status="replace")
-
-do i = 1, 2*grid, 1
-	do j = 1, 2*grid, 1
-		write(16,*) i, j, kbact(i,j)
-	end do
-end do
-
 end subroutine
+	
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+subroutine bactgrow
+
+use globalvars
+use functions
+	
+implicit none
+	integer		:: i, j
+	real		:: groperc
+	
+
+delbactpop = 0
+groperc = 0.0
+	
+do i = 1, 2*grid, 1
+	
+	do j = 1, 2*grid, 1
+	
+		delbactpop(i,j) = floor(bacgrowth(real(bacteria(i,j)%totalpop),real(bacteria(i,j)%numspecies),kbact(i,j)))
+		
+		groperc = delbactpop(i,j)/bacteria(i,j)%totalpop
+		
+		if (groperc .ge. 0.2) then
+			bacteria(i,j)%numspecies = floor(1.4*bacteria(i,j)%numspecies)
+		else if ((groperc .gt. 0.1) .and. (groperc .lt. 0.2)) then
+			bacteria(i,j)%numspecies = floor(1.2*bacteria(i,j)%numspecies)
+		end if
+
+		bacteria(i,j)%totalpop = bacteria(i,j)%totalpop + delbactpop(i,j)
+		
+	end do
+
+end do
+	
+end subroutine
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	
 subroutine diffuse(arrin,dime,delta)
 
@@ -365,7 +395,7 @@ use globalvars
 
 implicit none
 	integer, intent(in)						:: dime
-	real, dimension(dime,dime), intent(in)	:: arrin
+	real, dimension(dime,dime)				:: arrin
 	real, dimension(dime,dime)				:: delta
 	integer									:: i, j
 	real									:: diffco
@@ -414,6 +444,64 @@ arrin = arrin + delta
 
 end subroutine
 	
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+subroutine mixing(arrin,dime)
+
+use globalvars
+
+implicit none
+	integer, intent(in)						:: dime
+	real, dimension(dime,dime)				:: arrin
+	integer									:: i,j 
+	real									:: mixpress
+	integer									:: delta
+		
+do i = 1, dime, 1
+	
+	do j = 1, dime, 1
+		
+		delta = 0
+		
+		if (i .lt. dime) then
+	
+			delta = delta + abs(floor(mixpress*(arrin(i,j) - arrin(i+1,j))))
+			
+		end if
+		
+		if (i .ne. 1) then
+		
+			delta = delta + abs(floor(mixpress*(arrin(i,j) - arrin(i-1,j))))
+		
+		end if
+		
+		if (j .lt. dime) then
+			
+			delta = delta + abs(floor(mixpress*(arrin(i,j) - arrin(i,j+1))))
+			
+		end if
+		
+		if (j .ne. 1) then
+			
+			delta = delta + abs(floor(mixpress*(arrin(i,j) - arrin(i,j-1))))
+			
+		end if
+		
+			arrin(i,j) = arrin(i,j) + delta
+		
+		if (arrin(i,j) .gt. maxspec) then
+			arrin(i,j) = maxspec
+		end if
+		
+	end do
+	
+end do
+
+end subroutine
+
+
+
+
 	
 	
 	
