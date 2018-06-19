@@ -22,7 +22,7 @@ end type bacteriavar
 	integer									:: numnew = 0
 	real									:: popconstant
 	real									:: pi = acos(-1.0)
-	integer									:: randall, values(8)
+	integer									:: randall = 12
 	real									:: avgpop
 	integer									:: maxspec
 	
@@ -54,7 +54,7 @@ implicit none
 	
 rate = 0.75
 	
-	bacgrowth = rate*(1.0 - (totalpop/carry))!*specpop
+	bacgrowth = rate*(1.0 - (totalpop/carry))*specpop
 	
 end function bacgrowth
 

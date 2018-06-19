@@ -158,6 +158,7 @@ fishpop = fish(x,y)
 fish(x,y) = fish(x,y) + fishdelta(fishpop)
 !write(*,*) fishpop, fishdelta(fishpop), fishlocal
 
+
 end subroutine
 	
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -219,7 +220,7 @@ implicit none
 	arrin(x,y) = arrin(x,y) - decayconst*algcount
 
 	! Resets negative values to zero
-	if (arrin(x,y) .le. 0.0) then
+	if (arrin(x,y) .le. 0.1) then
 		arrin(x,y) = 0.0
 	end if
 
@@ -314,8 +315,8 @@ implicit none
 
 kbact = avgpop
 algaemod = 0.7
-coralmod = 1.2
-barriermod = 1.3
+coralmod = 1.4
+barriermod = 1.7
 
 
 do i = 1, grid, 1
@@ -370,7 +371,6 @@ do i = 1, 2*grid, 1
 	do j = 1, 2*grid, 1
 	
 		delbactpop(i,j) = floor(bacgrowth(real(bacteria(i,j)%totalpop),real(bacteria(i,j)%numspecies),kbact(i,j)))
-		
 		groperc = delbactpop(i,j)/bacteria(i,j)%totalpop
 		
 		if (groperc .ge. 0.2) then
@@ -401,7 +401,7 @@ implicit none
 	real									:: diffco
 	
 	
-diffco = 0.1
+diffco = 0.01
 delta = 0.0
 	
 do i = 1, dime, 1

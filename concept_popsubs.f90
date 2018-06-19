@@ -35,7 +35,6 @@ implicit none
 write(*,*) "Populating the initial coral layer."
 ! Generates a seed for use in populating layers
 
-		call random_seed(size=randall)
 		call system_clock(count=clock)
 		seed = clock + 34*(/(i-1,i=1,randall)/)
 		call random_seed(put=seed)
@@ -70,7 +69,7 @@ use globalvars
 	integer									:: counter					! Lowers the value of cluster as it gets further from center
 	real									:: temp(1:2)				! Holds randomly generated numbers 
 	integer									:: coordinate(1:2)			! Holds x,y coordinates of center of cluster
-	real									:: tightclustermult = 1.5	! Determines the increase in coral in cluster
+	real									:: tightclustermult = 2.0	! Determines the increase in coral in cluster
 	real									:: disttrail				! Spreads the increase across the cluster.
 																		!  interacts with counter to linearly decrease the 
 																		!  increase in coral with distance from center
@@ -80,7 +79,7 @@ use globalvars
 disttrail = tightclustermult/real(distance)
 counter = 0
 
-call random_seed(size=randall)
+!call random_seed(size=randall)
 call system_clock(count_rate=clock)
 seed = clock + 34*(/(i-1,i=1,randall)/)	
 
@@ -105,7 +104,7 @@ end if
 
 	do j = x, x + distance, 1
 		
-		if (arrin(j,y) .ne. 0.0) then
+		if ((arrin(j,y) .ne. 0.0) .and. (j .le. grid)) then
 		
 			arrin(x,y+j) = arrin(x,y+j) + arrin(x,y+j)*disttrail*real(distance-counter)
 			arrin(x,y-j) = arrin(x,y-j) + arrin(x,y-j)*disttrail*real(distance-counter)
@@ -120,7 +119,7 @@ end if
 	
 	do i = y, y + distance, 1
 	
-		if (arrin(x,i) .ne. 0.0) then
+		if ((arrin(x,i) .ne. 0.0) .and. (i .le.grid)) then
 		
 			arrin(x+i,y) = arrin(x+i,y) + arrin(x+i,y)*disttrail*real(distance-counter)
 			arrin(x-i,y) = arrin(x-i,y) + arrin(x-i,y)*disttrail*real(distance-counter)
@@ -135,6 +134,8 @@ end do
 	
 end subroutine
 		
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		
 subroutine newcoral
 
 use globalvars
@@ -148,27 +149,22 @@ implicit none
 	
 	
 coraltot  = sum(coral)
-area 	  = grid**2
+area 	  = float(grid)**2
 avgcoral  = coraltot/area
-threshold = 4.0
+threshold = 3.0
 
 
 
 if (avgcoral .ge. threshold) then
 	
-	call random_seed(size=randall)
 	call system_clock(count=clock)
 	seed = clock + 34*(/(i-1,i=1,randall)/)
 	call random_seed(put=seed)
 	call random_number(temp)
 
-
-
 	if (temp .ge. 0.7) then
 
-		call random_seed(size=randall)
-		call system_clock(count=clock)
-		seed = clock + 34*(/(i-1,i=1,randall)/)
+		seed = seed*2
 		call random_seed(put=seed)
 		call random_number(coord)
 				
@@ -222,12 +218,12 @@ average = 0.0
 bacteria%totalpop = int(avgpop)
 bacteria%numspecies = 1
 
+	call random_seed(size=randall)
+	call system_clock(count=clock)
+	seed = clock + 34*(/(i-1,i=1,randall)/)
+
 do while (average .lt. avgspec)
 	
-			
-			call random_seed(size=randall)
-			call system_clock(count=clock)
-			seed = clock + 34*(/(i-1,i=1,randall)/)
 			call random_seed(put=seed)
 			call random_number(coord)
 			
@@ -237,6 +233,7 @@ do while (average .lt. avgspec)
 			
 			average = float(sum(bacteria%numspecies))/area
 
+			seed = seed*3 - 50
 end do
 
 open(unit=14,file="bactlayer.dat",status="replace",position="append")
@@ -246,6 +243,8 @@ open(unit=14,file="bactlayer.dat",status="replace",position="append")
 			write(14,*) i, j, bacteria(i,j)%numspecies, bacteria(i,j)%totalpop
 		end do
 	end do
+
+close(14)
 
 end subroutine
 

@@ -46,7 +46,7 @@ write(*,*) "Enter the number of time steps :"
 read(*,*) numtime
 write(*,*) "Enter percentage of bed with coral:"
 read(*,*) percentcover
-write(*,*) "Number of coral clusters?"		! Currently 
+write(*,*) "Number of coral clusters?"
 read(*,*) clusnum
 write(*,*) "Please input distance for the tightly clustered coral clusters:"
 read(*,*) distance
@@ -60,7 +60,7 @@ allocate(fish(grid,grid))
 allocate(bacteria(2*grid,2*grid))
 allocate(kbact(2*grid,2*grid))
 allocate(delbactpop(2*grid,2*grid))
-
+allocate(seed(randall))
 ! Initializing grids
 coral = 0.0
 holding = 0.0
@@ -100,7 +100,7 @@ do t = 1, numtime, 1
 	
 			do j = 1, grid, 1
 		
-				call neighborsum(i,j,holding,nearsum)
+				!call neighborsum(i,j,holding,nearsum)
 				call growth(i,j,coral,coral)
 				call decay(i,j,coral)
 				call newcoral
@@ -132,6 +132,16 @@ call printtofile(coral)
 
 filename = "fishfin.dat"
 call printtofile(fish)
+
+open(unit=14,file="bactlayerfin.dat",status="replace",position="append")
+	
+	do i = 1, 2*grid, 1
+		do j = 1, 2*grid, 1
+			write(14,*) i, j, bacteria(i,j)%numspecies, bacteria(i,j)%totalpop
+		end do
+	end do
+
+close(14)
 
  
 end program
