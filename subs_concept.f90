@@ -217,6 +217,10 @@ implicit none
 	call fishinteraction(decayconst,x,y)
 	
 	! Coral being eaten.
+	if (decayconst .lt. 0.0) then
+		decayconst = 0.0
+	end if
+	
 	arrin(x,y) = arrin(x,y) - decayconst*algcount
 
 	! Resets negative values to zero
@@ -236,7 +240,7 @@ use globalvars
 
 	real						:: modify				! Input variable to be modified
 	integer,intent(in)			:: i, j					! Looping integers
-	real						:: fisheat = 0.08		! Lowers input variable based on how much nearby fish eat the algae
+	real						:: fisheat = 0.05		! Lowers input variable based on how much nearby fish eat the algae
 	
 	
 	! Checks for fish around algae and lowers the amount of coral destroyed by the algae
@@ -341,7 +345,7 @@ do i = 1, grid, 1
 			kbact(2*i,2*j+1) = kbact(2*i,2*j+1)*barriermod
 		end if
 		
-		if (((coral(i,j) .ne. 0) .and. (coral(i,j+1) .eq.0)) .and. ((2*j .lt. 2*grid) .and. (2*i .lt. grid))) then
+		if (((coral(i,j) .ne. 0) .and. (coral(i,j+1) .eq. 0)) .and. ((2*j .lt. 2*grid) .and. (2*i .lt. grid))) then
 			kbact(2*i,2*j+1) = kbact(2*i,2*j+1)*barriermod
 		end if		
 	
@@ -360,36 +364,43 @@ use functions
 	
 implicit none
 	integer		:: i, j
-	real		:: groperc
+	real		:: groperc, delbactpop
 	
 
-delbactpop = 0
+delbactpop = 0.0
 groperc = 0.0
 	
 do i = 1, 2*grid, 1
 	
 	do j = 1, 2*grid, 1
 	
-		delbactpop(i,j) = floor(bacgrowth(real(bacteria(i,j)%totalpop),real(bacteria(i,j)%numspecies),kbact(i,j)))
-		groperc = delbactpop(i,j)/bacteria(i,j)%totalpop
+		delbactpop = floor(bacgrowth(real(bacteria(i,j)%totalpop),real(bacteria(i,j)%numspecies),kbact(i,j)))
 		
-		if (groperc .ge. 0.2) then
-			bacteria(i,j)%numspecies = floor(1.4*bacteria(i,j)%numspecies)
-		else if ((groperc .gt. 0.1) .and. (groperc .lt. 0.2)) then
-			bacteria(i,j)%numspecies = floor(1.2*bacteria(i,j)%numspecies)
+		groperc = delbactpop/real(bacteria(i,j)%totalpop)
+		
+		if (groperc .ge. 0.02) then
+			bacteria(i,j)%numspecies = bacteria(i,j)%numspecies + 4
+		else if ((groperc .gt. 0.01) .and. (groperc .lt. 0.2) .and. (groperc .gt. 0.0)) then
+			bacteria(i,j)%numspecies = bacteria(i,j)%numspecies + 2
+		else if ((groperc .gt. -0.02) .and.  (groperc .lt. 0.0))then
+			bacteria(i,j)%numspecies = bacteria(i,j)%numspecies - 2
+		else if (groperc .lt. -0.2) then
+			bacteria(i,j)%numspecies = bacteria(i,j)%numspecies - 4
 		end if
 
-		bacteria(i,j)%totalpop = bacteria(i,j)%totalpop + delbactpop(i,j)
+		bacteria(i,j)%totalpop = bacteria(i,j)%totalpop + int(delbactpop)
 		
 	end do
 
 end do
+
+where (bacteria%numspecies .gt. maxspec) bacteria%numspecies = maxspec
 	
 end subroutine
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	
-subroutine diffuse(arrin,dime,delta)
+subroutine diffuse(arrin,dime)
 
 use globalvars
 
@@ -408,28 +419,28 @@ do i = 1, dime, 1
 	
 	do j = 1, dime, 1
 		
-		if ((arrin(i,j) .gt. arrin(i+1,j)) .and. (i .lt. dime)) then
+		if ((i .lt. dime) .and. (arrin(i,j) .gt. arrin(i+1,j))) then
 	
 			delta(i+1,j) = delta(i+1,j) +  diffco*(arrin(i,j) - arrin(i+1,j))
 			delta(i,j) = delta(i,j) - diffco*(arrin(i,j) - arrin(i+1,j))
 		
 		end if
 		
-		if ((arrin(i,j) .gt. arrin(i-1,j)) .and. (i .ne. 1)) then
+		if ((i .gt. 1) .and. (arrin(i,j) .gt. arrin(i-1,j))) then
 		
 			delta(i-1,j) = delta(i-1,j) + diffco*(arrin(i,j) - arrin(i-1,j))
 			delta(i,j) = delta(i,j) - diffco*(arrin(i,j) - arrin(i-1,j))
 		
 		end if
 		
-		if ((arrin(i,j) .gt. arrin(i,j+1)) .and. (j .lt. dime)) then
+		if ((j .lt. dime) .and. (arrin(i,j) .gt. arrin(i,j+1))) then
 			
 			delta(i,j+1) = delta(i,j+1) + diffco*(arrin(i,j) - arrin(i,j+1))
 			delta(i,j) = delta(i,j) - diffco*(arrin(i,j) - arrin(i,j+1))
 			
 		end if
 		
-		if ((arrin(i,j) .gt. arrin(i,j-1)) .and. (j .ne. 1)) then
+		if ((j .gt. 1) .and. (arrin(i,j) .gt. arrin(i,j-1))) then
 			
 			delta(i,j-1) = delta(i,j-1) + diffco*(arrin(i,j) - arrin(i,j-1))
 			delta(i,j) = delta(i,j) - diffco*(arrin(i,j) - arrin(i,j-1))
@@ -440,7 +451,7 @@ do i = 1, dime, 1
 	
 end do
 
-arrin = arrin + delta
+arrin = arrin + int(delta)
 
 end subroutine
 	
@@ -457,6 +468,8 @@ implicit none
 	real									:: mixpress
 	integer									:: delta
 		
+mixpress = 0.1	
+	
 do i = 1, dime, 1
 	
 	do j = 1, dime, 1
@@ -489,13 +502,12 @@ do i = 1, dime, 1
 		
 			arrin(i,j) = arrin(i,j) + delta
 		
-		if (arrin(i,j) .gt. maxspec) then
-			arrin(i,j) = maxspec
-		end if
 		
 	end do
 	
 end do
+
+where (arrin .gt. maxspec) arrin = maxspec
 
 end subroutine
 

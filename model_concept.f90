@@ -52,6 +52,8 @@ write(*,*) "Please input distance for the tightly clustered coral clusters:"
 read(*,*) distance
 write(*,*) "Maximum number of bacteria species?"
 read(*,*) maxspec
+write(*,*) "New coral threshold?"
+read(*,*) threshold
 
 ! Allocation statements, error checking coming soon.
 allocate(coral(grid,grid))
@@ -59,13 +61,15 @@ allocate(holding(grid,grid))
 allocate(fish(grid,grid))
 allocate(bacteria(2*grid,2*grid))
 allocate(kbact(2*grid,2*grid))
-allocate(delbactpop(2*grid,2*grid))
 allocate(seed(randall))
+
 ! Initializing grids
 coral = 0.0
 holding = 0.0
 fgrowfact = 0.25
 fishconst = 5.0
+bacteria%totalpop = 0
+bacteria%numspecies = 0
 
 ! Populates the coral/algae layer
 call hppop(coral)
@@ -102,17 +106,17 @@ do t = 1, numtime, 1
 		
 				!call neighborsum(i,j,holding,nearsum)
 				call growth(i,j,coral,coral)
-				call decay(i,j,coral)
-				call newcoral
-				call kgrid
-				call bactgrow
-				call diffuse(bacteria%totalpop,2*grid,delbactpop)
-				call mixing(bacteria%numspecies,2*grid)
-				
+				call decay(i,j,coral)				
 	
 			end do
 	
 		end do
+		
+		call newcoral
+		call kgrid
+		call bactgrow
+		call diffuse(bacteria%totalpop,2*grid)
+		call mixing(bacteria%numspecies,2*grid)		
 
 		if (mod(t,5) .eq. 0) then
 			write(filename,50) t
