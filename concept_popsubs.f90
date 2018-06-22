@@ -42,17 +42,19 @@ write(*,*) "Populating the initial coral layer."
 
 ! Removes coral from the grid based on the percent cover of the total grid. This also determines the 
 ! amount of algae.
-	do i = 1, grid, 1
-		
-		do j = 1, grid, 1
-		
-			if (arrin(i,j) .lt. (1.0-percentcover)) then
-				arrin(i,j) = 0.0
-			end if
-		
-		end do
-		
-	end do
+!	do i = 1, grid, 1
+!		
+!		do j = 1, grid, 1
+!		
+!			if (arrin(i,j) .lt. (1.0-percentcover)) then
+!				arrin(i,j) = 0.0
+!			end if
+!		
+!		end do
+!		
+!	end do
+
+where (arrin .lt. (1.0-percentcover)) arrin = 0.0
 
 end subroutine
 
@@ -70,7 +72,7 @@ use globalvars
 	real									:: temp(1:2)				! Holds randomly generated numbers 
 	integer									:: coordinate(1:2)			! Holds x,y coordinates of center of cluster
 	real									:: tightclustermult = 2.0	! Determines the increase in coral in cluster
-	real									:: disttrail				! Spreads the increase across the cluster.
+	real									:: disttrail, far			! Spreads the increase across the cluster.
 																		!  interacts with counter to linearly decrease the 
 																		!  increase in coral with distance from center
 
@@ -97,41 +99,45 @@ y = coordinate(2)
 	
 write(*,*) "Cluster at:", coordinate(1), coordinate(2)
 
-if (arrin(x,y) .ne. 0.0) then
-	arrin(x,y) = arrin(x,y)*tightclustermult*0.7
-end if
+	arrin(x,y) = arrin(x,y)*tightclustermult
 
-
-	do j = 0, distance, 1
+	do j = -distance, distance, 1
+	
+		do i = -distance, distance, 1
 		
-		if ((arrin(j,y) .ne. 0.0) .and. ((y+j) .le. grid)) then
-			arrin(x,y+j) = arrin(x,y+j) + arrin(x,y+j)*disttrail*real(distance-counter)
-		end if
+			far = (distance - counter)
+			if (far .lt. 0) then
+				far = 0
+			end if
+		
+			if ((y+j) .le. grid) then
+				arrin(x,y+j) = arrin(x,y+j) + arrin(x,y+j)*disttrail*real(far)
+			end if
+	
+			if ((y-j) .gt. 0) then
+				arrin(x,y-j) = arrin(x,y-j) + arrin(x,y-j)*disttrail*real(far)
+			end if	
 
-		if ((arrin(j,y) .ne. 0.0) .and. ((y-j) .gt. 0)) then
-			arrin(x,y-j) = arrin(x,y-j) + arrin(x,y-j)*disttrail*real(distance-counter)
-		end if
+			if ((x+i) .le. grid) then
+				arrin(x+i,y) = arrin(x+i,y) + arrin(x+i,y)*disttrail*real(far)	
+			end if
+		
+			if ((x-i) .gt. 0) then
+				arrin(x-i,y) = arrin(x-i,y) + arrin(x-i,y)*disttrail*real(far)
+			end if
 
-		counter = counter + 1
+			if (((x+j) .le. grid) .and. ((y+i) .le. grid) .and. ((x+j) .ge. 0) .and. ((y+i) .ge. 0)) then
+				arrin(x+j,y+i) = arrin(x+j,y+i) + arrin(x+j,y+i)*disttrail*real(far)*0.707
+			end if
+
+			counter = counter + 1
+
+		end do
+
+		counter = 0
 
 	end do
-	
-	counter = 0
-	
-	do i = 0, distance, 1
-	
-		if ((arrin(x,i) .ne. 0.0) .and. ((x+i) .le.grid)) then
-			arrin(x+i,y) = arrin(x+i,y) + arrin(x+i,y)*disttrail*real(distance-counter)	
-		end if
-		
-		if ((arrin(x,i) .ne. 0.0) .and. ((x-i) .gt.0)) then
-			arrin(x-i,y) = arrin(x-i,y) + arrin(x-i,y)*disttrail*real(distance-counter)
-		end if
-		
-		counter = counter + 1		
-		
-	end do
-	
+
 end do
 	
 end subroutine
@@ -227,7 +233,7 @@ do while (average .lt. avgspec)
 	
 			call random_number(coord)
 			
-			coord = 2*grid*coord
+			coord = 2*grid*coord + 1
 			
 			bacteria(floor(coord(1)),floor(coord(2)))%numspecies = bacteria(floor(coord(1)),floor(coord(2)))%numspecies + 1
 			

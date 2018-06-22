@@ -115,8 +115,8 @@ do t = 1, numtime, 1
 		call newcoral
 		call kgrid
 		call bactgrow
-		call diffuse(bacteria%totalpop,2*grid)
-		call mixing(bacteria%numspecies,2*grid)		
+		call diffuse
+		call mixing	
 
 		if (mod(t,5) .eq. 0) then
 			write(filename,50) t

@@ -177,7 +177,7 @@ implicit none
 	
 	! Initializations
 	algcount = 0.0
-	decayconst = 0.25
+	decayconst = 0.15
 	
 	
 	! Checks for algae around the input gridpoint and out-of-bounds
@@ -313,14 +313,16 @@ subroutine kgrid
 use globalvars
 
 implicit none
-	integer		:: i, j, k, l
-	real		:: algaemod, coralmod, barriermod
+	integer							:: i, j, k
+	real							:: algaemod, coralmod, barriermod
+	real,dimension(2*grid,2*grid)	:: kdelta
 
 
 kbact = avgpop
-algaemod = 0.7
-coralmod = 1.4
-barriermod = 1.7
+kdelta = 0.0
+algaemod = 0.8
+coralmod = 1.2
+barriermod = 1.5
 
 
 do i = 1, grid, 1
@@ -328,30 +330,48 @@ do i = 1, grid, 1
 	do j = 1, grid, 1
 	
 		if (coral(i,j) .ne. 0) then 
-			kbact(2*i-1,2*j-1) = kbact(2*i-1,2*j-1)*coralmod
-			kbact(2*i,2*j) = kbact(2*i,2*j)*coralmod
+			kbact(2*i-1,2*j-1) = avgpop*coralmod
+			kbact(2*i-1,2*j) = avgpop*coralmod
+			kbact(2*i,2*j) = avgpop*coralmod
+			kbact(2*i,2*j-1) = avgpop*coralmod
 		else if (coral(i,j) .eq. 0) then
-			kbact(2*i-1,2*j-1) = kbact(2*i-1,2*j-1)*algaemod
-			kbact(2*i,2*j) = kbact(2*i,2*j)*algaemod
+			kbact(2*i-1,2*j-1) = avgpop*algaemod
+			kbact(2*i,2*j) = avgpop*algaemod
+			kbact(2*i,2*j-1) = avgpop*algaemod
+			kbact(2*i-1,2*j) = avgpop*algaemod
 		end if
-				
-		if ((coral(i,j) .ne. 0) .and. (coral(i+1,j) .eq. 0)) then
-			kbact(2*i,2*j) = kbact(2*i,2*j)*barriermod
-			kbact(2*i+1,2*j) = kbact(2*i+1,2*j)*barriermod
+			
+	end do
+	
+end do
+
+do i = 1, 2*grid, 1
+	
+	do j = 1, 2*grid, 1
+
+		if ((i .lt. 2*grid) .and. (kbact(i,j) .ne. kbact(i+1,j))) then
+			kdelta(i,j) = avgpop*barriermod - avgpop
 		end if
 		
-		if ((coral(i,j) .ne. 0) .and. (coral(i,j+1) .eq. 0)) then
-			kbact(2*i,2*j) = kbact(2*i,2*j)*barriermod
-			kbact(2*i,2*j+1) = kbact(2*i,2*j+1)*barriermod
+		if ((j .gt. 2*grid) .and. (kbact(i,j) .ne. kbact(i,j+1))) then
+			kdelta(i,j) = avgpop*barriermod - avgpop
 		end if
-		
-		if (((coral(i,j) .ne. 0) .and. (coral(i,j+1) .eq. 0)) .and. ((2*j .lt. 2*grid) .and. (2*i .lt. grid))) then
-			kbact(2*i,2*j+1) = kbact(2*i,2*j+1)*barriermod
-		end if		
 	
 	end do
 	
 end do
+
+kbact = kbact + kdelta
+
+	open(unit=17,file="kbact.dat",position="append",status="replace")
+	
+	do i = 1, 2*grid, 1
+		do j = 1, 2*grid, 1	
+			write(17,*) i,j,kbact(i,j)
+		end do
+	end do
+	
+	close(17)
 
 end subroutine
 	
@@ -395,55 +415,54 @@ do i = 1, 2*grid, 1
 end do
 
 where (bacteria%numspecies .gt. maxspec) bacteria%numspecies = maxspec
+where (bacteria%numspecies .lt. 0) bacteria%numspecies = 0
 	
 end subroutine
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	
-subroutine diffuse(arrin,dime)
+subroutine diffuse
 
 use globalvars
 
 implicit none
-	integer, intent(in)						:: dime
-	real, dimension(dime,dime)				:: arrin
-	real, dimension(dime,dime)				:: delta
-	integer									:: i, j
-	real									:: diffco
+	real, dimension(2*grid,2*grid)				:: delta
+	integer										:: i, j
+	real										:: diffco
 	
 	
 diffco = 0.01
 delta = 0.0
 	
-do i = 1, dime, 1
+do i = 1, 2*grid, 1
 	
-	do j = 1, dime, 1
+	do j = 1, 2*grid, 1
 		
-		if ((i .lt. dime) .and. (arrin(i,j) .gt. arrin(i+1,j))) then
+		if ((i .lt. 2*grid) .and. (bacteria(i,j)%totalpop .gt. bacteria(i+1,j)%totalpop)) then
 	
-			delta(i+1,j) = delta(i+1,j) +  diffco*(arrin(i,j) - arrin(i+1,j))
-			delta(i,j) = delta(i,j) - diffco*(arrin(i,j) - arrin(i+1,j))
+			delta(i+1,j) = delta(i+1,j) +  diffco*(bacteria(i,j)%totalpop - bacteria(i+1,j)%totalpop)
+			delta(i,j) = delta(i,j) - diffco*(bacteria(i,j)%totalpop - bacteria(i+1,j)%totalpop)
 		
 		end if
 		
-		if ((i .gt. 1) .and. (arrin(i,j) .gt. arrin(i-1,j))) then
+		if ((i .gt. 1) .and. (bacteria(i,j)%totalpop .gt. bacteria(i-1,j)%totalpop)) then
 		
-			delta(i-1,j) = delta(i-1,j) + diffco*(arrin(i,j) - arrin(i-1,j))
-			delta(i,j) = delta(i,j) - diffco*(arrin(i,j) - arrin(i-1,j))
+			delta(i-1,j) = delta(i-1,j) + diffco*(bacteria(i,j)%totalpop - bacteria(i-1,j)%totalpop)
+			delta(i,j) = delta(i,j) - diffco*(bacteria(i,j)%totalpop - bacteria(i-1,j)%totalpop)
 		
 		end if
 		
-		if ((j .lt. dime) .and. (arrin(i,j) .gt. arrin(i,j+1))) then
+		if ((j .lt. 2*grid) .and. (bacteria(i,j)%totalpop .gt. bacteria(i,j+1)%totalpop)) then
 			
-			delta(i,j+1) = delta(i,j+1) + diffco*(arrin(i,j) - arrin(i,j+1))
-			delta(i,j) = delta(i,j) - diffco*(arrin(i,j) - arrin(i,j+1))
+			delta(i,j+1) = delta(i,j+1) + diffco*(bacteria(i,j)%totalpop - bacteria(i,j+1)%totalpop)
+			delta(i,j) = delta(i,j) - diffco*(bacteria(i,j)%totalpop - bacteria(i,j+1)%totalpop)
 			
 		end if
 		
-		if ((j .gt. 1) .and. (arrin(i,j) .gt. arrin(i,j-1))) then
+		if ((j .gt. 1) .and. (bacteria(i,j)%totalpop .gt. bacteria(i,j-1)%totalpop)) then
 			
-			delta(i,j-1) = delta(i,j-1) + diffco*(arrin(i,j) - arrin(i,j-1))
-			delta(i,j) = delta(i,j) - diffco*(arrin(i,j) - arrin(i,j-1))
+			delta(i,j-1) = delta(i,j-1) + diffco*(bacteria(i,j)%totalpop - bacteria(i,j-1)%totalpop)
+			delta(i,j) = delta(i,j) - diffco*(bacteria(i,j)%totalpop - bacteria(i,j-1)%totalpop)
 			
 		end if
 		
@@ -451,63 +470,65 @@ do i = 1, dime, 1
 	
 end do
 
-arrin = arrin + int(delta)
+bacteria%totalpop = bacteria%totalpop + int(delta)
+
+where (bacteria%totalpop .lt. 0) bacteria%totalpop = 0
 
 end subroutine
 	
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-subroutine mixing(arrin,dime)
+subroutine mixing
 
 use globalvars
 
 implicit none
-	integer, intent(in)						:: dime
-	real, dimension(dime,dime)				:: arrin
 	integer									:: i,j 
 	real									:: mixpress
 	integer									:: delta
-		
-mixpress = 0.1	
+				
+do i = 1, 2*grid, 1
 	
-do i = 1, dime, 1
-	
-	do j = 1, dime, 1
+	do j = 1, 2*grid, 1
 		
 		delta = 0
 		
-		if (i .lt. dime) then
+		if (i .lt. 2*grid) then
 	
-			delta = delta + abs(floor(mixpress*(arrin(i,j) - arrin(i+1,j))))
+			delta = delta + bacteria(i,j)%numspecies - bacteria(i+1,j)%numspecies
 			
 		end if
 		
 		if (i .ne. 1) then
 		
-			delta = delta + abs(floor(mixpress*(arrin(i,j) - arrin(i-1,j))))
+			delta = delta + bacteria(i,j)%numspecies - bacteria(i-1,j)%numspecies
 		
 		end if
 		
-		if (j .lt. dime) then
+		if (j .lt. 2*grid) then
 			
-			delta = delta + abs(floor(mixpress*(arrin(i,j) - arrin(i,j+1))))
+			delta = delta + bacteria(i,j)%numspecies - bacteria(i,j+1)%numspecies
 			
 		end if
 		
 		if (j .ne. 1) then
 			
-			delta = delta + abs(floor(mixpress*(arrin(i,j) - arrin(i,j-1))))
+			delta = delta + bacteria(i,j)%numspecies - bacteria(i,j-1)%numspecies
 			
 		end if
 		
-			arrin(i,j) = arrin(i,j) + delta
+		if (delta .lt. 0) then
+			delta = 0
+		end if
+		
+			bacteria(i,j)%numspecies = bacteria(i,j)%numspecies + delta
 		
 		
 	end do
 	
 end do
 
-where (arrin .gt. maxspec) arrin = maxspec
+where (bacteria%numspecies .gt. maxspec) bacteria%numspecies = maxspec
 
 end subroutine
 

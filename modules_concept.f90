@@ -52,8 +52,9 @@ implicit none
 	real		:: rate	
 	
 rate = 0.75
-	
-	bacgrowth = rate*(1.0 - (real(totalpop)/real(carry)))*specpop
+bacgrowth = 0.0
+
+	bacgrowth = rate*(1.0 - (real(totalpop)/real(carry)))*real(specpop)
 	
 end function bacgrowth
 
