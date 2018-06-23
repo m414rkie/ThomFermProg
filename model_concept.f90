@@ -8,10 +8,11 @@ PROGRAM concept
 ! 1.00b - Coral and algae interaction
 ! 1.00c - Fish layer added
 ! 1.00d - Coral/Algae layer population routines
+! 1.00d - Bacteria layer added
 !
 ! Version   Programmer         Date       Description
 ! -------   ----------         --------   --------------------
-! 1.00d     Jon Parsons        3-19-18	  Proof of concept
+! 1.00e     Jon Parsons        6-23-18	  Proof of concept
 !
 ! IN args/commons              Units      Description
 ! -----------------            -----      ----------------------
@@ -35,6 +36,7 @@ implicit none
 	integer				:: i, j, t ! Looping integers; n is random seed holder
 	integer				:: numtime ! Number of timesteps and clusters of coral
 
+! Format statements
 50 format ("coraltime",1i2,".dat")		
 
 
@@ -71,7 +73,6 @@ bacteria%numspecies = 0
 
 ! Populates the coral/algae layer
 call hppop(coral)
-
 call tightcluster(coral)
 
 ! Increases overal population of coral as each gridpoint will be between zero and one beforehand
@@ -87,9 +88,11 @@ filename = "coralini.dat"
 call printtofile(coral)
 call fishdist(fish)
 
+! Initial disposition of fish layer
 filename = "fishini.dat"
 call printtofile(fish)
 
+! Populating initital bacteria layer
 call bacteriapop
 
 ! Outer loops iterates time, i and j iterate x and y respectively
@@ -114,7 +117,7 @@ do t = 1, numtime, 1
 		call bactgrow
 		call diffuse
 		call mixing	
-
+		
 		if (mod(t,5) .eq. 0) then
 			write(filename,50) t
 			call printtofile(coral)
@@ -127,7 +130,7 @@ end do
 
 write(*,*) numnew
 
-! Prints the final coral/algae layer after the number of timesteps is reached.
+! Print statements for final layer after the number of timesteps is reached.
 filename = "coralfin.dat"
 call printtofile(coral)
 

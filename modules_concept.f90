@@ -41,7 +41,7 @@ use globalvars
 implicit none
 	real		:: input, pop
 	
-	fishdelta = -fgrowfact*(input - pop) + fishlocal
+	fishdelta = -fgrowfact*(input - pop)
 	
 end function fishdelta
 

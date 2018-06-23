@@ -104,11 +104,13 @@ implicit none
 	integer, intent(in)							:: x, y					! Input coordinates
 	real,dimension(grid,grid), intent(in) 		:: arrin				! Input array
 	real,dimension(grid,grid), intent(out)		:: arrout				! Output array
-	real										:: fishpop
-	real										:: growpercent = 1.1
+	real										:: fishpop				! Fish population of a gridpoint
+	real										:: growpercent = 1.1	! Flat percentage growth for coral
 	
-	arrout(x,y) = arrin(x,y)*growpercent
-	
+! Grows coral	
+arrout(x,y) = arrin(x,y)*growpercent
+
+! Initializations
 fishlocal = 0.0
 fishpop = fish(x,y)
 
@@ -156,8 +158,6 @@ fishpop = fish(x,y)
 
 ! Finalizes the population growth of fish, faster with more coral.
 fish(x,y) = fish(x,y) + fishdelta(sum(coral),fish(x,y))
-!write(*,*) fishpop, fishdelta(fishpop), fishlocal
-
 
 end subroutine
 	
@@ -221,6 +221,7 @@ implicit none
 		decayconst = 0.0
 	end if
 	
+	! Coral less the algae eating it
 	arrin(x,y) = arrin(x,y) - decayconst*algcount
 
 	! Resets negative values to zero
@@ -234,7 +235,7 @@ end subroutine
 
 subroutine fishinteraction(modify,i,j)
 
-! Interaction of fish with algae layer. 
+! Interaction of fish with algae layer. Lessens the pressure of algae against the fish.
 
 use globalvars
 
@@ -310,21 +311,24 @@ end subroutine
 	
 subroutine kgrid
 
+! Finds the carrying capacity of each gridpoint for the bacteria layer
+
 use globalvars
 
 implicit none
-	integer							:: i, j, k
-	real							:: algaemod, coralmod, barriermod
-	real,dimension(2*grid,2*grid)	:: kdelta
+	integer							:: i, j								! Looping integers
+	real							:: algaemod, coralmod, barriermod	! Variables for varying the carrying capacity
+	real,dimension(2*grid,2*grid)	:: kdelta							! Change in carrying capacity
 
 
+! Initializations 
 kbact = avgpop
 kdelta = 0.0
-algaemod = 0.8
-coralmod = 1.2
+algaemod = 1.2
+coralmod = 0.8
 barriermod = 1.5
 
-
+! Loops for initial set up, no barrier interaction
 do i = 1, grid, 1
 	
 	do j = 1, grid, 1
@@ -345,6 +349,7 @@ do i = 1, grid, 1
 	
 end do
 
+! Loops to determine barrier interaction
 do i = 1, 2*grid, 1
 	
 	do j = 1, 2*grid, 1
@@ -361,6 +366,7 @@ do i = 1, 2*grid, 1
 	
 end do
 
+! Final updating of the layer
 kbact = kbact + kdelta
 
 	open(unit=17,file="kbact.dat",position="append",status="replace")
@@ -379,23 +385,27 @@ end subroutine
 
 subroutine bactgrow
 
+! Grows the bacteria layer, both totalpop and species
+
 use globalvars
 use functions
 	
 implicit none
-	integer		:: i, j
-	real		:: groperc, delbactpop
+	integer		:: i, j						! Looping integers
+	real		:: groperc, delbactpop		! determines new species and change in bacteria population 
 	
-
+! Initializations
 delbactpop = 0.0
 groperc = 0.0
 	
 do i = 1, 2*grid, 1
 	
 	do j = 1, 2*grid, 1
-	
+		
+		! Finds change in population
 		delbactpop = floor(bacgrowth(real(bacteria(i,j)%totalpop),real(bacteria(i,j)%numspecies),kbact(i,j)))
 		
+		! Determines how many new species show up
 		groperc = delbactpop/real(bacteria(i,j)%totalpop)
 		
 		if (groperc .ge. 0.02) then
@@ -414,6 +424,7 @@ do i = 1, 2*grid, 1
 
 end do
 
+! Trims the layer 
 where (bacteria%numspecies .gt. maxspec) bacteria%numspecies = maxspec
 where (bacteria%numspecies .lt. 0) bacteria%numspecies = 0
 	
@@ -423,17 +434,20 @@ end subroutine
 	
 subroutine diffuse
 
+! Diffusion subroutine. Primary driver is population pressure
+
 use globalvars
 
 implicit none
-	real, dimension(2*grid,2*grid)				:: delta
-	integer										:: i, j
-	real										:: diffco
+	real, dimension(2*grid,2*grid)				:: delta		! Holds overall change from diffusion
+	integer										:: i, j			! Looping integers
+	real										:: diffco		! Diffusion coefficient
 	
-	
+! Initializations
 diffco = 0.01
 delta = 0.0
 	
+! Working loops
 do i = 1, 2*grid, 1
 	
 	do j = 1, 2*grid, 1
@@ -470,6 +484,7 @@ do i = 1, 2*grid, 1
 	
 end do
 
+! Final update and trim
 bacteria%totalpop = bacteria%totalpop + int(delta)
 
 where (bacteria%totalpop .lt. 0) bacteria%totalpop = 0
@@ -480,13 +495,18 @@ end subroutine
 
 subroutine mixing
 
+! Mixing subroutine for redistributing species
+
 use globalvars
 
 implicit none
-	integer									:: i,j 
-	real									:: mixpress
-	integer									:: delta
-				
+	integer									:: i,j 			! Looping integers
+	real									:: mixpress		! Pressure for mixing
+	integer									:: delta		! Change in number of species
+								
+mixpress = 0.5
+
+! Working loops
 do i = 1, 2*grid, 1
 	
 	do j = 1, 2*grid, 1
@@ -528,6 +548,7 @@ do i = 1, 2*grid, 1
 	
 end do
 
+! Trimming 
 where (bacteria%numspecies .gt. maxspec) bacteria%numspecies = maxspec
 
 end subroutine
