@@ -155,7 +155,7 @@ fishpop = fish(x,y)
 
 
 ! Finalizes the population growth of fish, faster with more coral.
-fish(x,y) = fish(x,y) + fishdelta(sum(coral))
+fish(x,y) = fish(x,y) + fishdelta(sum(coral),fish(x,y))
 !write(*,*) fishpop, fishdelta(fishpop), fishlocal
 
 
@@ -177,7 +177,7 @@ implicit none
 	
 	! Initializations
 	algcount = 0.0
-	decayconst = 0.15
+	decayconst = 0.08
 	
 	
 	! Checks for algae around the input gridpoint and out-of-bounds

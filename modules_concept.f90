@@ -17,13 +17,15 @@ end type bacteriavar
 	integer									:: clock, distance						! System time and radial distance of coral clusters
 	character*20							:: filename								! Changes for what is being put into the file
 	real									:: percentcover							! Percent of grid to have coral on it 'groundcover'
-	real									:: fishconst, fishlocal, fgrowfact
+	real									:: fishlocal, fgrowfact
 	integer									:: numnew = 0
 	real									:: popconstant
 	real									:: pi = acos(-1.0)
 	integer									:: randall = 12
 	real									:: avgpop, threshold
 	integer									:: maxspec
+	logical,allocatable						:: check(:,:)
+
 	
 end module
 
@@ -32,14 +34,14 @@ module functions
 
 contains
 
-real function fishdelta(input)
+real function fishdelta(input,pop)
 
 use globalvars
 
 implicit none
-	real		:: input
+	real		:: input, pop
 	
-	fishdelta = -fgrowfact*(input - fishconst) + fishlocal
+	fishdelta = -fgrowfact*(input - pop) + fishlocal
 	
 end function fishdelta
 

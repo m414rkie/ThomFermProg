@@ -40,22 +40,6 @@ write(*,*) "Populating the initial coral layer."
 		call random_seed(put=seed)
 		call random_number(arrin)
 
-! Removes coral from the grid based on the percent cover of the total grid. This also determines the 
-! amount of algae.
-!	do i = 1, grid, 1
-!		
-!		do j = 1, grid, 1
-!		
-!			if (arrin(i,j) .lt. (1.0-percentcover)) then
-!				arrin(i,j) = 0.0
-!			end if
-!		
-!		end do
-!		
-!	end do
-
-where (arrin .lt. (1.0-percentcover)) arrin = 0.0
-
 end subroutine
 
 subroutine tightcluster(arrin)
@@ -69,13 +53,13 @@ use globalvars
 	real,dimension(grid,grid)				:: arrin					! Input array
 	integer									:: i,j,x,y, k				! Looping integers
 	integer									:: counter					! Lowers the value of cluster as it gets further from center
-	real									:: temp(1:2)				! Holds randomly generated numbers 
-	integer									:: coordinate(1:2)			! Holds x,y coordinates of center of cluster
+	real, allocatable						:: coordinate(:,:)			! Holds x,y coordinates of center of cluster
 	real									:: tightclustermult = 2.0	! Determines the increase in coral in cluster
 	real									:: disttrail, far			! Spreads the increase across the cluster.
 																		!  interacts with counter to linearly decrease the 
 																		!  increase in coral with distance from center
 
+allocate(coordinate(2,clusnum))
 
 ! Initializations
 disttrail = tightclustermult/real(distance)
@@ -84,50 +68,48 @@ counter = 0
 !call random_seed(size=randall)
 call system_clock(count_rate=clock)
 seed = clock + 34*(/(i-1,i=1,randall)/)	
+call random_seed(put=seed)
+call random_number(coordinate)
 
-do k=1, clusnum, 1
+coordinate = grid*coordinate
 
-		call random_seed(put=seed)
-		call random_number(temp)
-		
-		seed = seed*2 - 6
-		
-coordinate = floor(grid*temp)
+do k = 1, clusnum, 1
 
-x = coordinate(1)
-y = coordinate(2)	
+x = floor(coordinate(1,k)) + 1
+y = floor(coordinate(2,k)) + 1	
 	
-write(*,*) "Cluster at:", coordinate(1), coordinate(2)
+write(*,*) "Cluster at:", x, y
 
-	arrin(x,y) = arrin(x,y)*tightclustermult
+	arrin(x,y) = arrin(x,y) + tightclustermult
 
 	do j = -distance, distance, 1
 	
 		do i = -distance, distance, 1
 		
 			far = (distance - counter)
+			
 			if (far .lt. 0) then
 				far = 0
 			end if
 		
 			if ((y+j) .le. grid) then
-				arrin(x,y+j) = arrin(x,y+j) + arrin(x,y+j)*disttrail*real(far)
+				arrin(x,y+j) = arrin(x,y+j) + tightclustermult*disttrail*real(far)
 			end if
 	
 			if ((y-j) .gt. 0) then
-				arrin(x,y-j) = arrin(x,y-j) + arrin(x,y-j)*disttrail*real(far)
+				arrin(x,y-j) = arrin(x,y-j) + tightclustermult*disttrail*real(far)
 			end if	
 
 			if ((x+i) .le. grid) then
-				arrin(x+i,y) = arrin(x+i,y) + arrin(x+i,y)*disttrail*real(far)	
+				arrin(x+i,y) = arrin(x+i,y) + tightclustermult*disttrail*real(far)	
 			end if
 		
 			if ((x-i) .gt. 0) then
-				arrin(x-i,y) = arrin(x-i,y) + arrin(x-i,y)*disttrail*real(far)
+				arrin(x-i,y) = arrin(x-i,y) + tightclustermult*disttrail*real(far)
 			end if
 
 			if (((x+j) .le. grid) .and. ((y+i) .le. grid) .and. ((x+j) .ge. 0) .and. ((y+i) .ge. 0)) then
-				arrin(x+j,y+i) = arrin(x+j,y+i) + arrin(x+j,y+i)*disttrail*real(far)*0.707
+				arrin(x+j,y+i) = arrin(x+j,y+i) +tightclustermult*disttrail*real(far)*0.707
 			end if
 
 			counter = counter + 1
@@ -140,6 +122,8 @@ write(*,*) "Cluster at:", coordinate(1), coordinate(2)
 
 end do
 	
+where (arrin .lt. (1.0-percentcover)) arrin = 0.0
+	
 end subroutine
 		
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -149,16 +133,44 @@ subroutine newcoral
 use globalvars
 
 implicit none
-	real			:: coraltot, area
-	real			:: avgcoral
-	real			:: temp
-	real			:: coord(1:2)
-	integer			:: x, y, i
+	real					:: coraltot, area
+	real					:: avgcoral
+	real					:: temp
+	real					:: coord
+	integer					:: x, y, i, j, l, c
+	integer,allocatable		:: algaeloc(:,:)
 	
 	
 coraltot  = sum(coral)
 area 	  = float(grid)**2
 avgcoral  = coraltot/area
+c = 0
+
+check = (coral .eq. 0.0)
+
+l = count(check)
+write(*,*) "l", l
+
+allocate(algaeloc(2,l))
+algaeloc = 0
+
+do i = 1, grid, 1
+	
+	do j = 1, grid, 1
+		
+		if (coral(i,j) .eq. 0.0) then
+			
+			c = c + 1
+			algaeloc(1,c) = i
+			algaeloc(2,c) = j
+		
+		end if
+		
+	end do
+	
+end do
+
+write(*,*) "c", c
 
 if (avgcoral .ge. threshold) then
 	
@@ -167,39 +179,26 @@ if (avgcoral .ge. threshold) then
 	call random_seed(put=seed)
 	call random_number(temp)
 
-	if (temp .ge. 0.7) then
+	if (temp .ge. 0.4) then
 
 		seed = seed*2
 		call random_seed(put=seed)
 		call random_number(coord)
 				
-		x = floor(grid*coord(1))
-		y = floor(grid*coord(2))
+		x = algaeloc(1,floor(l*coord))
+		y = algaeloc(2,floor(l*coord))
 		
 		numnew = numnew + 1
 		
 		write(*,*) "New coral growth at:", x, y
 
-		if (coral(x,y) .eq. 0.0) then
 			coral(x,y) = 1.2
-		else
-			x = x+1 ; y = y+1
-				
-				if (x .gt. grid) then
-					x = x - floor(0.5*coord(1))
-				end if	
-			
-				if (y .gt. grid) then
-					y = y - floor(0.5*coord(2))
-				end if
-			
-			coral(x,y) = 1.2
-					
-		end if
 		
 	end if
 
 end if
+		
+deallocate(algaeloc)
 		
 end subroutine	
 		
@@ -209,7 +208,7 @@ use globalvars
 use functions
 
 implicit none
-	real 				:: avgspec, ran
+	real 				:: avgspec, ran, minispec
 	real				:: coord(2)
 	real				:: average, area
 	integer				:: i, j
@@ -217,14 +216,11 @@ implicit none
 		
 write(*,*) "Populating initial Bacteria layer."
 
-write(*,*) "Average number of bacteria species?"
-read(*,*) avgspec
-
 write(*,*) "Maximum number of bacteria species?"
 read(*,*) maxspec
 
-write(*,*) "Deviation of species?"
-read(*,*) deviation
+write(*,*) "Minimum number of species?"
+read(*,*) minispec
 
 avgpop = 1000.0
 area = (2*float(grid))**2
@@ -244,7 +240,7 @@ do i = 1, 2*grid, 1
 	
 			call random_number(ran)
 			
-			ran = floor(maxspec*ran + 3.0*deviation*(1.0-ran))
+			ran = floor(maxspec*ran + minispec*(1.0-ran))
 			
 			bacteria(i,j)%numspecies = (int(ran))
 
@@ -253,7 +249,7 @@ do i = 1, 2*grid, 1
 end do
 
 average = sum(bacteria%numspecies)/area
-write(*,*) average
+write(*,*) "Average umber of species:" ,average
 
 
 open(unit=14,file="bactlayer.dat",status="replace",position="append")

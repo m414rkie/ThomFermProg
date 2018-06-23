@@ -57,6 +57,7 @@ read(*,*) threshold
 allocate(coral(grid,grid))
 allocate(holding(grid,grid))
 allocate(fish(grid,grid))
+allocate(check(grid,grid))
 allocate(bacteria(2*grid,2*grid))
 allocate(kbact(2*grid,2*grid))
 allocate(seed(randall))
@@ -65,7 +66,6 @@ allocate(seed(randall))
 coral = 0.0
 holding = 0.0
 fgrowfact = 0.25
-fishconst = 5.0
 bacteria%totalpop = 0
 bacteria%numspecies = 0
 
@@ -91,7 +91,6 @@ filename = "fishini.dat"
 call printtofile(fish)
 
 call bacteriapop
-
 
 ! Outer loops iterates time, i and j iterate x and y respectively
 do t = 1, numtime, 1
