@@ -50,8 +50,6 @@ write(*,*) "Number of coral clusters?"
 read(*,*) clusnum
 write(*,*) "Please input distance for the tightly clustered coral clusters:"
 read(*,*) distance
-write(*,*) "Maximum number of bacteria species?"
-read(*,*) maxspec
 write(*,*) "New coral threshold?"
 read(*,*) threshold
 

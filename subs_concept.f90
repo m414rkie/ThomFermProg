@@ -155,7 +155,7 @@ fishpop = fish(x,y)
 
 
 ! Finalizes the population growth of fish, faster with more coral.
-fish(x,y) = fish(x,y) + fishdelta(fishpop)
+fish(x,y) = fish(x,y) + fishdelta(sum(coral))
 !write(*,*) fishpop, fishdelta(fishpop), fishlocal
 
 

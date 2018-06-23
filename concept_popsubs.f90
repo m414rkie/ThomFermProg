@@ -209,16 +209,25 @@ use globalvars
 use functions
 
 implicit none
-	real 				:: avgspec
+	real 				:: avgspec, ran
 	real				:: coord(2)
 	real				:: average, area
 	integer				:: i, j
-	
+	real				:: deviation
+		
 write(*,*) "Populating initial Bacteria layer."
-avgspec = 100.0
+
+write(*,*) "Average number of bacteria species?"
+read(*,*) avgspec
+
+write(*,*) "Maximum number of bacteria species?"
+read(*,*) maxspec
+
+write(*,*) "Deviation of species?"
+read(*,*) deviation
+
 avgpop = 1000.0
 area = (2*float(grid))**2
-average = 0.0
 
 bacteria%totalpop = int(avgpop)
 bacteria%numspecies = 1
@@ -229,18 +238,23 @@ bacteria%numspecies = 1
 	call random_seed(put=seed)
 
 
-do while (average .lt. avgspec)
+do i = 1, 2*grid, 1
 	
-			call random_number(coord)
+	do j = 1, 2*grid, 1
+	
+			call random_number(ran)
 			
-			coord = 2*grid*coord + 1
+			ran = floor(maxspec*ran + 3.0*deviation*(1.0-ran))
 			
-			bacteria(floor(coord(1)),floor(coord(2)))%numspecies = bacteria(floor(coord(1)),floor(coord(2)))%numspecies + 1
-			
-			average = float(sum(bacteria%numspecies))/area
+			bacteria(i,j)%numspecies = (int(ran))
 
+	end do
 
 end do
+
+average = sum(bacteria%numspecies)/area
+write(*,*) average
+
 
 open(unit=14,file="bactlayer.dat",status="replace",position="append")
 	
