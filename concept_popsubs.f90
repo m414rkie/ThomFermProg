@@ -51,10 +51,9 @@ use globalvars
 
 	real,dimension(grid,grid)				:: arrin					! Input array
 	integer									:: i,j,x,y, k				! Looping integers
-	integer									:: counter					! Lowers the value of cluster as it gets further from center
 	real, allocatable						:: coordinate(:,:)			! Holds x,y coordinates of center of cluster
 	real									:: tightclustermult = 2.0	! Determines the increase in coral in cluster
-	real									:: disttrail, far			! Spreads the increase across the cluster.
+	real									:: disttrail, rad			! Spreads the increase across the cluster.
 																		!  interacts with counter to linearly decrease the 
 																		!  increase in coral with distance from center
 
@@ -86,39 +85,23 @@ write(*,*) "Cluster at:", x, y
 	do j = -distance, distance, 1
 	
 		do i = -distance, distance, 1
-		
-			far = (distance - counter)
-			
+					
 			! Logic statements check for floating point issues and distribute the cluster
 			if (far .lt. 0) then
 				far = 0
 			end if
 		
-			if ((y+j) .le. grid) then
-				arrin(x,y+j) = arrin(x,y+j) + tightclustermult*disttrail*real(far)
+			rad = sqrt(real(i**2) + real(j**2))
+			
+			if (rad .eq. 0) then
+				rad = 0.9
 			end if
-	
-			if ((y-j) .gt. 0) then
-				arrin(x,y-j) = arrin(x,y-j) + tightclustermult*disttrail*real(far)
-			end if	
-
-			if ((x+i) .le. grid) then
-				arrin(x+i,y) = arrin(x+i,y) + tightclustermult*disttrail*real(far)	
+			
+			if (((y+j) .le. grid) .and. ((y+j) .gt. 0) .and. ((x+i) .le. grid) .and. ((x+i) .gt. 0)) then
+				arrin(x+i,y+j) = arrin(x+i,y+j) + tightclustermult*disttrail*(1/rad)
 			end if
-		
-			if ((x-i) .gt. 0) then
-				arrin(x-i,y) = arrin(x-i,y) + tightclustermult*disttrail*real(far)
-			end if
-
-			if (((x+j) .le. grid) .and. ((y+i) .le. grid) .and. ((x+j) .ge. 0) .and. ((y+i) .ge. 0)) then
-				arrin(x+j,y+i) = arrin(x+j,y+i) +tightclustermult*disttrail*real(far)*0.707
-			end if
-
-			counter = counter + 1
 
 		end do
-
-		counter = 0
 
 	end do
 
@@ -155,6 +138,14 @@ avgcoral  = coraltot/area
 ! Initialize the 'counting' integer to update algaeloc locations
 c = 0
 
+! Determines how many locations are not coral
+check = (coral .eq. 0.0)
+
+! Sends the count to an integer and allocates algaeloc
+l = count(check)
+allocate(algaeloc(2,l))
+algaeloc = 0
+
 ! Checks coral average against threshold, checks against probability of generation, if pass calls random
 ! locations in algaeloc and places coral.
 if (avgcoral .ge. threshold) then
@@ -165,14 +156,6 @@ if (avgcoral .ge. threshold) then
 	call random_number(temp)
 
 	if (temp .ge. 0.4) then
-
-! Determines how many locations are not coral
-check = (coral .eq. 0.0)
-
-! Sends the count to an integer and allocates algaeloc
-l = count(check)
-allocate(algaeloc(2,l))
-algaeloc = 0
 
 ! Do loops to find exact coordinates of algae
 do i = 1, grid, 1
@@ -211,7 +194,9 @@ end do
 	end if
 
 end if
-				
+
+write(*,*) "Coral percentage:", real(area-l)/area
+
 end subroutine	
 		
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -267,7 +252,7 @@ end do
 
 ! Write statements
 average = sum(bacteria%numspecies)/area
-write(*,*) "Average umber of species:" ,average
+write(*,*) "Average number of species:" ,average
 
 
 open(unit=14,file="bactlayer.dat",status="replace",position="append")

@@ -33,8 +33,8 @@ PROGRAM concept
 use globalvars
 
 implicit none
-	integer				:: i, j, t ! Looping integers; n is random seed holder
-	integer				:: numtime ! Number of timesteps and clusters of coral
+	integer					:: i, j, t ! Looping integers; n is random seed holder
+	integer					:: numtime ! Number of timesteps and clusters of coral
 
 ! Format statements
 50 format ("coraltime",1i2,".dat")		
@@ -70,6 +70,8 @@ holding = 0.0
 fgrowfact = 0.25
 bacteria%totalpop = 0
 bacteria%numspecies = 0
+sharkmod = 0.0
+hunger = 0.0	
 
 ! Populates the coral/algae layer
 call hppop(coral)
@@ -86,6 +88,7 @@ write(*,*) "Files are written as (x,y,z) where z is the population/biomass"
 ! Initial disposition of coral/algae layer. 
 filename = "coralini.dat"
 call printtofile(coral)
+
 call fishdist(fish)
 
 ! Initial disposition of fish layer
@@ -94,11 +97,12 @@ call printtofile(fish)
 
 ! Populating initital bacteria layer
 call bacteriapop
-
 ! Outer loops iterates time, i and j iterate x and y respectively
 do t = 1, numtime, 1
 
 	write(*,*) "timestep", t
+	
+	call shark
 		
 		do i = 1, grid, 1
 	
@@ -117,7 +121,6 @@ do t = 1, numtime, 1
 		call bactgrow
 		call diffuse
 		call mixing	
-		
 		if (mod(t,5) .eq. 0) then
 			write(filename,50) t
 			call printtofile(coral)
@@ -128,7 +131,7 @@ do t = 1, numtime, 1
 
 end do
 
-write(*,*) numnew
+write(*,*) "Total number of new coral growths:", numnew
 
 ! Print statements for final layer after the number of timesteps is reached.
 filename = "coralfin.dat"
@@ -146,6 +149,14 @@ open(unit=14,file="bactlayerfin.dat",status="replace",position="append")
 	end do
 
 close(14)
+
+deallocate(coral)
+deallocate(holding)
+deallocate(fish)
+deallocate(check)
+deallocate(bacteria)
+deallocate(kbact)
+deallocate(seed)
 
  
 end program

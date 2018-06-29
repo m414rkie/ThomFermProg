@@ -157,7 +157,8 @@ fishpop = fish(x,y)
 
 
 ! Finalizes the population growth of fish, faster with more coral.
-fish(x,y) = fish(x,y) + fishdelta(sum(coral),fish(x,y))
+fish = fish + fishdelta(sum(coral),sum(fish))
+fish(x,y) = fish(x,y) + fishlocal
 
 end subroutine
 	
@@ -225,7 +226,7 @@ implicit none
 	arrin(x,y) = arrin(x,y) - decayconst*algcount
 
 	! Resets negative values to zero
-	if (arrin(x,y) .le. 0.1) then
+	if (arrin(x,y) .le. 0.05) then
 		arrin(x,y) = 0.0
 	end if
 
@@ -241,8 +242,9 @@ use globalvars
 
 	real						:: modify				! Input variable to be modified
 	integer,intent(in)			:: i, j					! Looping integers
-	real						:: fisheat = 0.05		! Lowers input variable based on how much nearby fish eat the algae
-	
+
+
+	fisheat = 0.05 + sharkmod
 	
 	! Checks for fish around algae and lowers the amount of coral destroyed by the algae
 	if(fish(i,j) .ne. 0.0) then
@@ -295,15 +297,15 @@ implicit none
 	real,dimension(grid,grid),intent(in)		:: arrin
 	integer 									:: i, j
 	
-open(unit=11,file=filename,status="replace",position="append")
+open(unit=15,file=filename,status="replace",position="append")
 
 do i = 1, grid, 1
 	do j = 1, grid, 1
-		write(11,*) i, j, arrin(i,j)
+		write(15,*) i, j, arrin(i,j)
 	end do
 end do
 
-close(11)
+close(15)
 
 end subroutine
 
@@ -324,9 +326,9 @@ implicit none
 ! Initializations 
 kbact = avgpop
 kdelta = 0.0
-algaemod = 1.2
+algaemod = 1.6
 coralmod = 0.8
-barriermod = 1.5
+barriermod = 1.4
 
 ! Loops for initial set up, no barrier interaction
 do i = 1, grid, 1
@@ -452,6 +454,7 @@ do i = 1, 2*grid, 1
 	
 	do j = 1, 2*grid, 1
 		
+		! x+1
 		if ((i .lt. 2*grid) .and. (bacteria(i,j)%totalpop .gt. bacteria(i+1,j)%totalpop)) then
 	
 			delta(i+1,j) = delta(i+1,j) +  diffco*(bacteria(i,j)%totalpop - bacteria(i+1,j)%totalpop)
@@ -459,6 +462,7 @@ do i = 1, 2*grid, 1
 		
 		end if
 		
+		! x-1
 		if ((i .gt. 1) .and. (bacteria(i,j)%totalpop .gt. bacteria(i-1,j)%totalpop)) then
 		
 			delta(i-1,j) = delta(i-1,j) + diffco*(bacteria(i,j)%totalpop - bacteria(i-1,j)%totalpop)
@@ -466,6 +470,7 @@ do i = 1, 2*grid, 1
 		
 		end if
 		
+		! y+1
 		if ((j .lt. 2*grid) .and. (bacteria(i,j)%totalpop .gt. bacteria(i,j+1)%totalpop)) then
 			
 			delta(i,j+1) = delta(i,j+1) + diffco*(bacteria(i,j)%totalpop - bacteria(i,j+1)%totalpop)
@@ -473,10 +478,43 @@ do i = 1, 2*grid, 1
 			
 		end if
 		
+		! x-1
 		if ((j .gt. 1) .and. (bacteria(i,j)%totalpop .gt. bacteria(i,j-1)%totalpop)) then
 			
 			delta(i,j-1) = delta(i,j-1) + diffco*(bacteria(i,j)%totalpop - bacteria(i,j-1)%totalpop)
 			delta(i,j) = delta(i,j) - diffco*(bacteria(i,j)%totalpop - bacteria(i,j-1)%totalpop)
+			
+		end if
+		
+		! x-1, y-1
+		if ((j .gt. 1) .and. (i .gt. 1) .and. (bacteria(i,j)%totalpop .gt. bacteria(i-1,j-1)%totalpop)) then
+			
+			delta(i-1,j-1) = delta(i-1,j-1) + diffco*(bacteria(i,j)%totalpop - bacteria(i-1,j-1)%totalpop)
+			delta(i,j) = delta(i,j) - diffco*(bacteria(i,j)%totalpop - bacteria(i-1,j-1)%totalpop)
+			
+		end if
+		
+		! x+1, y-1
+		if ((j .gt. 1) .and. (i .lt. 2*grid) .and. (bacteria(i,j)%totalpop .gt. bacteria(i+1,j-1)%totalpop)) then
+			
+			delta(i+1,j-1) = delta(i+1,j-1) + diffco*(bacteria(i,j)%totalpop - bacteria(i+1,j-1)%totalpop)
+			delta(i,j) = delta(i,j) - diffco*(bacteria(i,j)%totalpop - bacteria(i+1,j-1)%totalpop)
+			
+		end if
+		
+		! x-1, y+1
+		if ((j .lt. 2*grid) .and. (i .gt. 1) .and. (bacteria(i,j)%totalpop .gt. bacteria(i-1,j+1)%totalpop)) then
+			
+			delta(i-1,j+1) = delta(i-1,j+1) + diffco*(bacteria(i,j)%totalpop - bacteria(i-1,j+1)%totalpop)
+			delta(i,j) = delta(i,j) - diffco*(bacteria(i,j)%totalpop - bacteria(i-1,j+1)%totalpop)
+			
+		end if
+		
+		! x+1, y+1
+		if ((j .lt. 2*grid) .and. (i .lt. 2*grid) .and. (bacteria(i,j)%totalpop .gt. bacteria(i+1,j+1)%totalpop)) then
+			
+			delta(i+1,j+1) = delta(i+1,j+1) + diffco*(bacteria(i,j)%totalpop - bacteria(i+1,j+1)%totalpop)
+			delta(i,j) = delta(i,j) - diffco*(bacteria(i,j)%totalpop - bacteria(i+1,j+1)%totalpop)
 			
 		end if
 		
@@ -553,6 +591,33 @@ where (bacteria%numspecies .gt. maxspec) bacteria%numspecies = maxspec
 
 end subroutine
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+subroutine shark
+
+use globalvars
+
+implicit none
+	real			:: catch
+	integer			:: i
+	
+	
+sharkmod = 0.05
+
+call system_clock(count=clock)
+seed = clock + 8*(/(i-1,i=1,randall)/)
+call random_seed(put=seed)
+call random_number(catch)
+
+if (catch .gt. (1.0-hunger)) then
+	fish = fish*0.9
+	hunger = 0.0
+	write(*,*) "SHARK!"
+else
+	hunger = hunger + 0.05
+end if
+
+end subroutine
 
 
 

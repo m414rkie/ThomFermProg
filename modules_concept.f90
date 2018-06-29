@@ -17,7 +17,8 @@ end type bacteriavar
 	integer									:: clock, distance						! System time and radial distance of coral clusters
 	character*20							:: filename								! Changes for what is being put into the file
 	real									:: percentcover							! Percent of grid to have coral on it 'groundcover'
-	real									:: fishlocal, fgrowfact
+	real									:: fishlocal, fgrowfact, fisheat
+	real									:: sharkmod, hunger
 	integer									:: numnew = 0
 	real									:: popconstant
 	real									:: pi = acos(-1.0)
