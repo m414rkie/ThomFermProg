@@ -2,22 +2,23 @@ module globalvars
 
 implicit none
 
-type bacteriavar
+type microbevar
 	sequence
 	integer				:: totalpop
 	integer 			:: numspecies
-end type bacteriavar
+end type microbevar
+
 
 	integer									:: grid, clusnum						! Array size
 	real									:: norm, nearsum, test					! Variables for interactions
 	real, allocatable						:: holding(:,:), coral(:,:), fish(:,:)  ! Layer names
 	real, allocatable						:: kbact(:,:)							! Holds carrying capacity for bacteria
-	type (bacteriavar) , allocatable		:: bacteria(:,:)						! Layer names
+	type (microbevar) , allocatable			:: bacteria(:,:), phage(:,:)			! Layer names
 	integer, allocatable					:: seed(:)								! Random number holding array
 	integer									:: clock, distance						! System time and radial distance of coral clusters
-	character*20							:: filename								! Changes for what is being put into the file
 	real									:: percentcover							! Percent of grid to have coral on it 'groundcover'
 	real									:: fishlocal, fgrowfact, fisheat
+	character*50							:: bactfile, phagefile
 	real									:: sharkmod, hunger
 	integer									:: numnew = 0
 	real									:: popconstant
@@ -26,7 +27,7 @@ end type bacteriavar
 	real									:: avgpop, threshold
 	integer									:: maxspec
 	logical,allocatable						:: check(:,:)
-
+	real, allocatable						:: perabund(:,:,:)
 	
 end module
 
@@ -54,7 +55,7 @@ implicit none
 	real		:: totalpop, specpop, carry
 	real		:: rate	
 	
-rate = 0.75
+rate = 0.1
 bacgrowth = 0.0
 
 	bacgrowth = rate*(1.0 - (real(totalpop)/real(carry)))*real(specpop)

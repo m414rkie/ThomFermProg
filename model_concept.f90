@@ -33,11 +33,17 @@ PROGRAM concept
 use globalvars
 
 implicit none
-	integer					:: i, j, t ! Looping integers; n is random seed holder
-	integer					:: numtime ! Number of timesteps and clusters of coral
+	integer					:: i, j, t				! Looping integers; n is random seed holder
+	integer					:: numtime	    		! Number of timesteps and clusters of coral
+	character*20			:: filename1, filename2	! Changes for what is being put into the file
+	integer					:: allck
+
 
 ! Format statements
-50 format ("coraltime",1i2,".dat")		
+50 format ("coraltime",1i2,".dat")
+51 format ("fishtime",li2,".dat")
+52 format ("bacttime",li2,".dat")
+53 format ("phagetime",li2,".dat")
 
 
 ! User input 
@@ -55,14 +61,23 @@ read(*,*) distance
 write(*,*) "New coral threshold?"
 read(*,*) threshold
 
-! Allocation statements, error checking coming soon.
-allocate(coral(grid,grid))
-allocate(holding(grid,grid))
-allocate(fish(grid,grid))
-allocate(check(grid,grid))
-allocate(bacteria(2*grid,2*grid))
-allocate(kbact(2*grid,2*grid))
-allocate(seed(randall))
+! Allocation statements
+allocate(coral(grid,grid), stat=allck)
+	if (allck .ne. 0) stop "Coral Allocation Failed"
+allocate(holding(grid,grid), stat=allck)
+	if (allck .ne. 0) stop "Holding Allocation Failed"
+allocate(fish(grid,grid), stat=allck)
+	if (allck .ne. 0) stop "Fish Allocation Failed"
+allocate(check(grid,grid), stat=allck)
+	if (allck .ne. 0) stop "Check Allocation Failed"
+allocate(bacteria(2*grid,2*grid), stat=allck)
+	if (allck .ne. 0) stop "Bacteria Allocation Failed"
+allocate(kbact(2*grid,2*grid), stat=allck)
+	if (allck .ne. 0) stop "Kbact Allocation Failed"
+allocate(phage(2*grid,2*grid), stat=allck)
+	if (allck .ne. 0) stop "Phage Allocation Failed"
+allocate(seed(randall), stat=allck)
+	if (allck .ne. 0) stop "Seed Allocation Failed"
 
 ! Initializing grids
 coral = 0.0
@@ -71,7 +86,7 @@ fgrowfact = 0.25
 bacteria%totalpop = 0
 bacteria%numspecies = 0
 sharkmod = 0.0
-hunger = 0.0	
+hunger = 0.3	
 
 ! Populates the coral/algae layer
 call hppop(coral)
@@ -86,17 +101,22 @@ write(*,*) "0.0 represents pure algae; greater than zero represents coral, highe
 write(*,*) "Files are written as (x,y,z) where z is the population/biomass"
 
 ! Initial disposition of coral/algae layer. 
-filename = "coralini.dat"
+filename1 = "coralini.dat"
 call printtofile(coral)
 
 call fishdist(fish)
 
 ! Initial disposition of fish layer
-filename = "fishini.dat"
+filename2 = "fishini.dat"
 call printtofile(fish)
 
 ! Populating initital bacteria layer
+call kgrid
 call bacteriapop
+
+! Populating initial phage layer
+call phagepop
+
 ! Outer loops iterates time, i and j iterate x and y respectively
 do t = 1, numtime, 1
 
@@ -121,9 +141,14 @@ do t = 1, numtime, 1
 		call bactgrow
 		call diffuse
 		call mixing	
-		if (mod(t,5) .eq. 0) then
-			write(filename,50) t
-			call printtofile(coral)
+		if (mod(t,3) .eq. 0) then
+			write(filename1,50) t
+			write(filename2,51) t
+			write(bactfile,52) t
+			write(phagefile,53) t
+			call printtofile(coral,grid,filename1)
+			call printtofile(fish,grid,filename2)
+			call printbact
 		end if
 
  
@@ -134,11 +159,11 @@ end do
 write(*,*) "Total number of new coral growths:", numnew
 
 ! Print statements for final layer after the number of timesteps is reached.
-filename = "coralfin.dat"
-call printtofile(coral)
+filename1 = "coralfin.dat"
+call printtofile(coral,filename1)
 
-filename = "fishfin.dat"
-call printtofile(fish)
+filename2 = "fishfin.dat"
+call printtofile(fish,filename2)
 
 open(unit=14,file="bactlayerfin.dat",status="replace",position="append")
 	

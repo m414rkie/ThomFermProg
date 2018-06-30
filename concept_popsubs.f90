@@ -211,7 +211,8 @@ use functions
 implicit none
 	real 				:: avgspec, ran, minispec			! Average num. of species, random number, minimum number of species
 	real				:: average, area					! Average of species, area of grid
-	integer				:: i, j								! Looping integers
+	integer				:: i, j, k							! Looping integers
+	integer				:: state
 		
 write(*,*) "Populating initial Bacteria layer."
 
@@ -223,11 +224,15 @@ write(*,*) "Minimum number of species?"
 read(*,*) minispec
 
 ! Initializations
-avgpop = 1000.0
 area = (2*float(grid))**2
 
-bacteria%totalpop = int(avgpop)
+bacteria%totalpop = kbact
 bacteria%numspecies = 1
+
+allocate(perabund(2*grid,2*grid,maxspec), stat=state)
+	if (state .ne. 0) stop "Percent abundance failed to allocate."
+
+perabund = 0.0
 
 ! Random number generation for species distribution 
 call random_seed(size=randall)
@@ -245,6 +250,10 @@ do i = 1, 2*grid, 1
 			ran = floor(maxspec*ran + minispec*(1.0-ran))
 			
 			bacteria(i,j)%numspecies = (int(ran))
+			
+			do k = 1, int(ran), 1
+				perabund(i,j,k) = 1.0/ran
+			end do
 
 	end do
 
@@ -264,6 +273,32 @@ open(unit=14,file="bactlayer.dat",status="replace",position="append")
 	end do
 
 close(14)
+
+end subroutine
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+subroutine phagepop
+
+use globalvars
+use functions
+
+implicit none
+	integer			:: i, j
+	real			:: bactmod
+	
+bactmod = 0.7
+	
+do i = 1, 2*grid, 1
+	
+	do j = 1, 2*grid, 1
+	
+		phage(i,j)%totalpop = int((real(bacteria(i,j)%totalpop)*bactmod)*50.0)
+		phage(i,j)%numspecies = int((real(bacteria(i,j)%numspecies)*bactmod))
+		
+	end do
+	
+end do
 
 end subroutine
 

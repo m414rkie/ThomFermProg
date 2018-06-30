@@ -287,20 +287,22 @@ end subroutine
 	
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	
-subroutine printtofile(arrin)
+subroutine printtofile(arrin,size,file)
 
 ! Prints to a file in x-y-z format
 
 use globalvars
 
 implicit none
-	real,dimension(grid,grid),intent(in)		:: arrin
+	real,dimension(size,size),intent(in)		:: arrin
+	integer, intent(in)							:: size
+	character*50, intent(in)					:: file
 	integer 									:: i, j
 	
-open(unit=15,file=filename,status="replace",position="append")
+open(unit=15,file=trim(file),status="replace",position="append")
 
-do i = 1, grid, 1
-	do j = 1, grid, 1
+do i = 1, size, 1
+	do j = 1, size, 1
 		write(15,*) i, j, arrin(i,j)
 	end do
 end do
@@ -308,6 +310,29 @@ end do
 close(15)
 
 end subroutine
+
+subroutine printbact(file)
+
+! Prints to a file in x-y-int-int format. Column 3 totalpop, Column 4 number of species
+
+use globalvars
+
+implicit none
+	character*50, intent(in)					:: file
+	integer 									:: i, j
+	
+open(unit=16,file=trim(file),status="replace",position="append")
+
+do i = 1, 2*grid, 1
+	do j = 1, 2*grid, 1
+		write(16,*) i, j, bacteria%totalpop, bacteria%numspecies
+	end do
+end do
+
+close(16)
+
+end subroutine
+
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	
@@ -322,6 +347,9 @@ implicit none
 	real							:: algaemod, coralmod, barriermod	! Variables for varying the carrying capacity
 	real,dimension(2*grid,2*grid)	:: kdelta							! Change in carrying capacity
 
+
+write(*,*) "Average bacteria population?"
+read(*,*) avgpop
 
 ! Initializations 
 kbact = avgpop
@@ -393,12 +421,16 @@ use globalvars
 use functions
 	
 implicit none
-	integer		:: i, j						! Looping integers
+	integer		:: i, j, k, l				! Looping integers
 	real		:: groperc, delbactpop		! determines new species and change in bacteria population 
+	real		:: percentevent, loca
+	real		:: newperc
+	integer		:: percount
 	
 ! Initializations
 delbactpop = 0.0
 groperc = 0.0
+percount = 0
 	
 do i = 1, 2*grid, 1
 	
@@ -421,9 +453,36 @@ do i = 1, 2*grid, 1
 		end if
 
 		bacteria(i,j)%totalpop = bacteria(i,j)%totalpop + int(delbactpop)
+		l = bacteria(i,j)%numspecies
 		
-	end do
+		call system_clock(count=clock)
+		seed = clock + 8*(/(i-1,i=1,randall)/)
+		call random_seed(put=seed)
+		call random_number(percentevent)
 
+		if (percentevent .gt. 0.75) then
+			percount = percount + 1
+			
+			call random_number(newperc)
+			call random_number(loca)
+			loca = loca*bacteria(i,j)%numspecies
+			
+			do k = 1, maxspec, 1
+				
+				if (k .le. l) then
+					perabund(i,j,k) = (1.0-newperc)/real(l)
+				else 
+					perabund(i,j,k) = 0.0
+				end if
+				
+			end do
+			
+			perabund(i,j,floor(loca+1.0)) = newperc
+
+		end if
+
+	end do
+	
 end do
 
 ! Trims the layer 
@@ -542,7 +601,7 @@ implicit none
 	real									:: mixpress		! Pressure for mixing
 	integer									:: delta		! Change in number of species
 								
-mixpress = 0.5
+mixpress = 0.1
 
 ! Working loops
 do i = 1, 2*grid, 1
@@ -550,28 +609,59 @@ do i = 1, 2*grid, 1
 	do j = 1, 2*grid, 1
 		
 		delta = 0
-		
+		! x+1
 		if (i .lt. 2*grid) then
 	
 			delta = delta + bacteria(i,j)%numspecies - bacteria(i+1,j)%numspecies
 			
 		end if
 		
+		! x-1
 		if (i .ne. 1) then
 		
 			delta = delta + bacteria(i,j)%numspecies - bacteria(i-1,j)%numspecies
 		
 		end if
 		
+		! y+1
 		if (j .lt. 2*grid) then
 			
 			delta = delta + bacteria(i,j)%numspecies - bacteria(i,j+1)%numspecies
 			
 		end if
 		
+		! y-1
 		if (j .ne. 1) then
 			
 			delta = delta + bacteria(i,j)%numspecies - bacteria(i,j-1)%numspecies
+			
+		end if
+		
+		! x-1, y-1
+		if ((j .gt. 1) .and. (i .gt. 1)) then
+			
+			delta = delta + bacteria(i,j)%numspecies - bacteria(i-1,j-1)%numspecies
+			
+		end if
+		
+		! x+1, y-1
+		if ((j .gt. 1) .and. (i .lt. 2*grid)) then
+			
+			delta = delta + bacteria(i,j)%numspecies - bacteria(i+1,j-1)%numspecies
+			
+		end if
+		
+		! x-1, y+1
+		if ((j .lt. 2*grid) .and. (i .gt. 1)) then
+			
+			delta = delta + bacteria(i,j)%numspecies - bacteria(i-1,j+1)%numspecies
+			
+		end if
+		
+		! x+1, y+1
+		if ((j .lt. 2*grid) .and. (i .lt. 2*grid)) then
+			
+			delta = delta + bacteria(i,j)%numspecies - bacteria(i+1,j+1)%numspecies
 			
 		end if
 		
@@ -579,8 +669,7 @@ do i = 1, 2*grid, 1
 			delta = 0
 		end if
 		
-			bacteria(i,j)%numspecies = bacteria(i,j)%numspecies + delta
-		
+			bacteria(i,j)%numspecies = bacteria(i,j)%numspecies + int(real(delta)*mixpress)
 		
 	end do
 	
@@ -616,6 +705,17 @@ if (catch .gt. (1.0-hunger)) then
 else
 	hunger = hunger + 0.05
 end if
+
+end subroutine
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+subroutine phagegrow
+
+use globalvars
+use functions
+
+implicit none
 
 end subroutine
 
