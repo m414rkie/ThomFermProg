@@ -41,9 +41,9 @@ implicit none
 
 ! Format statements
 50 format ("coraltime",1i2,".dat")
-51 format ("fishtime",li2,".dat")
-52 format ("bacttime",li2,".dat")
-53 format ("phagetime",li2,".dat")
+54 format ("fishtime",1i2,".dat")
+52 format ("bacttime",1i2,".dat")
+53 format ("phagetime",1i2,".dat")
 
 
 ! User input 
@@ -60,6 +60,8 @@ write(*,*) "Please input distance for the tightly clustered coral clusters:"
 read(*,*) distance
 write(*,*) "New coral threshold?"
 read(*,*) threshold
+write(*,*) "Average bacteria population?"
+read(*,*) avgpop
 
 ! Allocation statements
 allocate(coral(grid,grid), stat=allck)
@@ -102,13 +104,14 @@ write(*,*) "Files are written as (x,y,z) where z is the population/biomass"
 
 ! Initial disposition of coral/algae layer. 
 filename1 = "coralini.dat"
-call printtofile(coral)
-
+write(*,*) "A"
+call printtofile(coral,grid,filename1)
+write(*,*) "B"
 call fishdist(fish)
 
 ! Initial disposition of fish layer
 filename2 = "fishini.dat"
-call printtofile(fish)
+call printtofile(fish,grid,filename2)
 
 ! Populating initital bacteria layer
 call kgrid
@@ -120,7 +123,7 @@ call phagepop
 ! Outer loops iterates time, i and j iterate x and y respectively
 do t = 1, numtime, 1
 
-	write(*,*) "timestep", t
+	write(*,*) "Beginning timestep", t
 	
 	call shark
 		
@@ -143,12 +146,12 @@ do t = 1, numtime, 1
 		call mixing	
 		if (mod(t,3) .eq. 0) then
 			write(filename1,50) t
-			write(filename2,51) t
+			write(filename2,54) t
 			write(bactfile,52) t
 			write(phagefile,53) t
 			call printtofile(coral,grid,filename1)
 			call printtofile(fish,grid,filename2)
-			call printbact
+			call printbact(bactfile,phagefile)
 		end if
 
  
@@ -160,10 +163,10 @@ write(*,*) "Total number of new coral growths:", numnew
 
 ! Print statements for final layer after the number of timesteps is reached.
 filename1 = "coralfin.dat"
-call printtofile(coral,filename1)
+call printtofile(coral,grid,filename1)
 
 filename2 = "fishfin.dat"
-call printtofile(fish,filename2)
+call printtofile(fish,grid,filename2)
 
 open(unit=14,file="bactlayerfin.dat",status="replace",position="append")
 	

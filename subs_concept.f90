@@ -158,7 +158,7 @@ fishpop = fish(x,y)
 
 ! Finalizes the population growth of fish, faster with more coral.
 fish = fish + fishdelta(sum(coral),sum(fish))
-fish(x,y) = fish(x,y) + fishlocal
+!fish(x,y) = fish(x,y) + fishlocal
 
 end subroutine
 	
@@ -294,42 +294,47 @@ subroutine printtofile(arrin,size,file)
 use globalvars
 
 implicit none
-	real,dimension(size,size),intent(in)		:: arrin
 	integer, intent(in)							:: size
-	character*50, intent(in)					:: file
+	real,dimension(size,size),intent(in)		:: arrin
+	character, intent(in)					:: file
 	integer 									:: i, j
 	
-open(unit=15,file=trim(file),status="replace",position="append")
+open(unit=19,file=trim(file),status="replace",position="append")
 
 do i = 1, size, 1
 	do j = 1, size, 1
-		write(15,*) i, j, arrin(i,j)
+		write(19,*) i, j, arrin(i,j)
 	end do
 end do
 
-close(15)
+close(19)
 
 end subroutine
 
-subroutine printbact(file)
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+subroutine printbact(filea,fileb)
 
 ! Prints to a file in x-y-int-int format. Column 3 totalpop, Column 4 number of species
 
 use globalvars
 
 implicit none
-	character*50, intent(in)					:: file
+	character*50, intent(in)					:: filea, fileb
 	integer 									:: i, j
 	
-open(unit=16,file=trim(file),status="replace",position="append")
+open(unit=16,file=trim(filea),status="replace",position="append")
+open(unit=17,file=trim(fileb),status="replace",position="append")
 
 do i = 1, 2*grid, 1
 	do j = 1, 2*grid, 1
-		write(16,*) i, j, bacteria%totalpop, bacteria%numspecies
+		write(16,*) i, j, bacteria(i,j)%totalpop, bacteria(i,j)%numspecies
+		write(17,*) i, j, phage(i,j)%totalpop, phage(i,j)%numspecies
 	end do
 end do
 
 close(16)
+close(17)
 
 end subroutine
 
@@ -346,10 +351,6 @@ implicit none
 	integer							:: i, j								! Looping integers
 	real							:: algaemod, coralmod, barriermod	! Variables for varying the carrying capacity
 	real,dimension(2*grid,2*grid)	:: kdelta							! Change in carrying capacity
-
-
-write(*,*) "Average bacteria population?"
-read(*,*) avgpop
 
 ! Initializations 
 kbact = avgpop

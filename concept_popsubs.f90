@@ -52,8 +52,8 @@ use globalvars
 	real,dimension(grid,grid)				:: arrin					! Input array
 	integer									:: i,j,x,y, k				! Looping integers
 	real, allocatable						:: coordinate(:,:)			! Holds x,y coordinates of center of cluster
-	real									:: tightclustermult = 2.0	! Determines the increase in coral in cluster
-	real									:: disttrail, rad			! Spreads the increase across the cluster.
+	real									:: tightclustermult = 0.5	! Determines the increase in coral in cluster
+	real									:: rad						! Spreads the increase across the cluster.
 																		!  interacts with counter to linearly decrease the 
 																		!  increase in coral with distance from center
 
@@ -61,7 +61,6 @@ use globalvars
 allocate(coordinate(2,clusnum))
 
 ! Initializations
-disttrail = tightclustermult/real(distance)
 counter = 0
 
 !call random_seed(size=randall)
@@ -80,8 +79,6 @@ y = floor(coordinate(2,k)) + 1
 	
 write(*,*) "Cluster at:", x, y
 
-	arrin(x,y) = arrin(x,y) + tightclustermult
-
 	do j = -distance, distance, 1
 	
 		do i = -distance, distance, 1
@@ -98,7 +95,7 @@ write(*,*) "Cluster at:", x, y
 			end if
 			
 			if (((y+j) .le. grid) .and. ((y+j) .gt. 0) .and. ((x+i) .le. grid) .and. ((x+i) .gt. 0)) then
-				arrin(x+i,y+j) = arrin(x+i,y+j) + tightclustermult*disttrail*(1/rad)
+				arrin(x+i,y+j) = arrin(x+i,y+j) + tightclustermult*(1/rad)
 			end if
 
 		end do
