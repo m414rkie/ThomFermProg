@@ -1,4 +1,4 @@
-subroutine boolequad(arr,booleint)
+subroutine boolequad(arr,booleint,upto)
 
 ! Integration subroutine, uses boolean quadrature method (5-pt)
 
@@ -6,6 +6,7 @@ use globalvars
 
 implicit none
 	real (kind=8), dimension(n)		  :: arr		! Dummy name for array
+	integer							  :: upto
 	real (kind=8), intent(out)		  :: booleint	! Final value for this subroutine
 	integer							  :: i			! Looping integer
 
@@ -13,7 +14,7 @@ implicit none
 booleint = 0.0
 
 ! Loop for composite Boole's rule. Weights included.
-do i = 4, n, 4
+do i = 4, upto, 4
 	
 	booleint = booleint + dv*(2.0/45.0)*(7.0*arr(i)+32.0*arr(i-1)+12.0*arr(i-2)+32.0*arr(i-3)+7.0*arr(i-4))
 
@@ -46,7 +47,7 @@ do i = 1, n, 1
 	kinarr(i) = kin(p1)
 end do
 
-call boolequad(kinarr,kinout)
+call boolequad(kinarr,kinout,n)
 
 kinout = ((4.0*pi)/(2.0*mass))*kinout
 end subroutine
@@ -93,14 +94,13 @@ dv2 = momentumcurrent/float(n)
 do i = 1, n, 1
 	
 	mom1 = dv1*float(i)
-
+	
 	do j = 1, n, 1
 	
 		mom2 = dv2*float(j)
 		
-		if (abs(mom1-mom2) .gt. 0.415) then
+		if (abs(mom1-mom2) .gt. exclusion) then
 		
-			
 			upperarr1(j) = (matchoice)*potmixed(mom1,mom2)
 			lowerarr1(j) = potunmixed(mom1,mom2)
 		
@@ -108,11 +108,10 @@ do i = 1, n, 1
 		
 	end do
 
-	call boolequad(upperarr1,uquad)
+	call boolequad(upperarr1,uquad,n)
 	upperarr2(i) = uquad
-	call boolequad(lowerarr1,lquad)
+	call boolequad(lowerarr1,lquad,n)
 	lowerarr2(i) = lquad
-
 
 end do
 
@@ -120,7 +119,7 @@ end do
 
 botharr = lowerarr2 + (matchoice)*upperarr2
 
-call boolequad(botharr,pot)
+call boolequad(botharr,pot,n)
 
 ! Finalization of results
 pot = -temp*(2.0/rho0)*((4.0*pi)**2)*(2.0/((2.0*pi)**3))*pot
@@ -266,7 +265,6 @@ else
 	
 	write(rhorange,'(2f5.2)') rholow, rhofinal
 
-	rhodv = (rhofinal - rholow)/m
 
 	! Filename logic, standard (-std) or neutron (-neut) matter names
 	if (mattypeparse .eq. "S") then
@@ -296,14 +294,13 @@ use functions
 implicit none
 	real (kind=8)					:: pfp, pfe, pfn, pfx, pfy
 	real (kind=8)					:: protchem, elecchem, neutchem
-	integer							:: i, arrval
-	real (kind=8)					:: singleprot, singleneut
+	integer							:: i, arrval, intcount
+	real (kind=8)					:: protelectot
 	real (kind=8) 					:: neutdense
-	real (kind=8), allocatable		:: neutchemarr(:),protchemarr(:)
+	real (kind=8), allocatable		:: protchemarr(:)
 
-
-!write(*,*) "Input Density to use in chemical potential test:"
-!read(*,*) rho
+write(*,*) "Input density due to protons:"
+read(*,*) rho
 
 pfp = (3.0*(pi**2)*rho)**(1.0/3.0)
 pfe = pfp
@@ -312,81 +309,85 @@ elecchem = ((pfe**2) + (0.511)**2)**(1.0/2.0)
 neutchem = 0.0
 pfn = 0.0
 
+dv = 0.00001
+
 arrval = ceiling(pfp/dv)
-allocate(neutchemarr(arrval))
 allocate(protchemarr(arrval))
 
-neutchemarr = 0.0
 protchemarr = 0.0
 
-105 do i = 1, arrval, 1
+do i = 1, arrval, 1
  pfx = dv*float(i)
  
- 	if (abs(pfn-pfx) .gt. 0.415) then
-		neutchemarr(i) = potunmixed(pfn,pfn)
-		protchemarr(i) = potunmixed(pfn,pfx)
+ 	if (abs(pfp-pfx) .gt. exclusion) then
+		protchemarr(i) = potunmixed(pfp,pfx)
 	end if
 	
 end do
 
-call boolequad(neutchemarr,neutchem)
-call boolequad(protchemarr,protchem)
+call boolequad(protchemarr,protchem,arrval)
 
-neutchem = neutchem + kinet(pfn) + potmixed(pfp,pfn)
-protchem = protchem + kinet(pfp) + potmixed(pfp,pfn)
-write(*,*) "things", protchem
+protchem = protchem + kinet(pfp)
 
-if (abs(neutchem - (protchem + elecchem)) .gt. 0.01) then
-	pfn = pfn + dv
-	goto 105
-end if
+protelectot = protchem + elecchem
+neutchem = protelectot
+
+call root(neutchem,pfn,arrval)
 
 neutdense = (pfn**3)/(3.0*(pi**2))
 
 write(*,*) "Proton potential:", protchem
 write(*,*) "Electron potential:", elecchem
-write(*,*) "Proton density:", rho/2.0
+write(*,*) "Proton density:", rho
 write(*,*) "Proton Fermi momentum:", pfp
 write(*,*) "Neutron Fermi momentum:", pfn
 write(*,*) "Neutron Density:", neutdense
 
 end subroutine
 
-!subroutine root 
-!
-!use globalvars
-!
-!implicit none
-!	real (kind=8)		:: step, pfn
-!	real (kind=8)		:: neutsingle, neutrho
-!	real (kind=8)		:: func, derive, derivepls1, deriveorig
-!	
-!matchoice = 0.0
-!step = 0.01
-!pfn = 0.0
-!101 momentumcurrent = pfn
-!rho = (pfn**3)/(3.0*(pi**2))
-!rhobar = rho
-!	
-!call potential	
-!neutsingle = -temp*(2.0/rho0)*((4.0*pi)**2)*(2.0/((2.0*pi)**3))*singlenergy*197.329 + ((pfn**2)/(2.0*mass*197.329))
-!	
-!if(abs(neutchem - neutsingle) .le. 0.001) then
-!	write(*,*) "Neutron potential:", neutchem
-!	write(*,*) "Neutron single energy:", neutsingle
-!	write(*,*) "Neutron density:", rho
-!	write(*,*) "Neutron Fermi momentum:", pfn
-!else
-!	deriveorig = neutsingle
-!	momentumcurrent = pfn + step 
-!	call potential
-!	derivepls1 = -temp*(2.0/rho0)*((4.0*pi)**2)*(2.0/((2.0*pi)**3))*singlenergy*197.329 + ((momentumcurrent**2)/(2.0*mass*197.329))
-!	derive = (derivepls1 - deriveorig)/step
-!	pfn = pfn + step !- deriveorig/derive
-!	goto 101
-!end if
-!
-!end subroutine
+subroutine root(checkagainst,finchem,arrsize) 
+
+use globalvars
+use functions
+
+implicit none
+	real (kind=8)					:: checkagainst, finchem
+	integer							:: arrsize, i
+	real (kind=8)					:: step, pfn, pfnx, delta
+	real (kind=8)					:: neutsingle, neutrho
+	real (kind=8)					:: func, derive, derivepls1, deriveorig
+	real (kind=8), allocatable		:: neutchemarr(:)
+
+finchem = 3.0
+delta  = 0.001
+
+103 arrsize = (finchem/dv)
+
+allocate(neutchemarr(arrsize))
+
+do i = 1, arrsize, 1
+
+	pfnx = dv*float(i)
+	neutchemarr(i) = potunmixed(finchem,pfnx)
+
+end do
+
+call boolequad(neutchemarr,neutsingle,arrsize)
+
+neutsingle = neutsingle + kinet(finchem)
+
+if (abs(checkagainst - neutsingle) .gt. 0.01) then
+	finchem = finchem - delta
+	deallocate(neutchemarr)
+	goto 103
+end if
+
+if (finchem .lt. 0) then
+	write(*,*) "No root found"
+end if
+
+
+end subroutine
 
 	
 

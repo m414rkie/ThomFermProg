@@ -16,6 +16,7 @@ module globalvars
 	real  		(kind=8), allocatable			:: epsrho(:,:), pressure(:,:), enerray(:,:)
 	character(1)								:: densenum, densenumparse, mattype, mattypeparse
 	character(50)								:: pressdense, pressrho, rhorange
+	real		(kind=8)						:: exclusion
 
 end module
 
@@ -40,11 +41,12 @@ implicit none
 	
 	if (abs(y-x) .lt. 0.415) then
 		potunmixed = 0.0
+		goto 21
 	end if
 
 potunmixed = (alphal - blo(x,y)  - sl + glo(x,y))*(x**2)*(y**2)
 
-end function potunmixed
+21 end function potunmixed
 
 
 real (kind=8) function potmixed(x,y)
@@ -60,10 +62,14 @@ implicit none
 	gup(a,b) = gammau*(momfin/abs(b-a))
 	su		 = sigmau*(((2.0*rhobar)/(rho0))**(2.0/3.0))
 
+	if (abs(y-x) .lt. 0.415) then
+		potmixed = 0.0
+		goto 22
+	end if
 
 potmixed = (alphau - bup(x,y)  - su + gup(x,y))*(x**2)*(y**2)
 
-end function potmixed
+22 end function potmixed
 
 real (kind=8) function kinet(in)
 

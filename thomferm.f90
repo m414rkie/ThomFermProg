@@ -76,10 +76,11 @@ sigmal = 0.5*(1.0-zeta)*sigma
 n = 800
 rhodv = 0.00833333333333333
 ! Step variables, n for integration, m for graph output
-n = 800
-m = 93
+
+exclusion = 0.415
 
 call input
+
 exitcondition = 0
 
 if (densenumparse .eq. "S") then
@@ -113,11 +114,6 @@ do i = 1, m, 1
 rho = rholow + rhodv*float(i)
 rhobar = rho
 
-momentumcurrent = (3.0*(pi**2)*rho)**(1.0/3.0)
-dv = momentumcurrent/float(n)
-
-rho = rhodv*float(i)
-rhobar = rho
 momentumcurrent = (3.0*(pi**2)*rho)**(1.0/3.0)
 dv = momentumcurrent/float(n)
 
