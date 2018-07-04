@@ -39,6 +39,7 @@ PROGRAM msenergy
 ! ------------------ Code -----------------------------
 
 use globalvars
+use functions
 
 implicit none
 	integer			:: i
@@ -85,7 +86,7 @@ exitcondition = 0
 
 if (densenumparse .eq. "S") then
 	
-	momentumcurrent = (3.0*(pi**2)*rho)**(1.0/3.0)
+	momentumcurrent = rhotomom(rho)
 	rhobar = rho
 	dv = momentumcurrent/float(n)
 	
@@ -114,7 +115,7 @@ do i = 1, m, 1
 rho = rholow + rhodv*float(i)
 rhobar = rho
 
-momentumcurrent = (3.0*(pi**2)*rho)**(1.0/3.0)
+momentumcurrent = rhotomom(rho)
 dv = momentumcurrent/float(n)
 
 call potential

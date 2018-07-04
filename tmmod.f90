@@ -48,6 +48,7 @@ potunmixed = (alphal - blo(x,y)  - sl + glo(x,y))*(x**2)*(y**2)
 
 21 end function potunmixed
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 real (kind=8) function potmixed(x,y)
 
@@ -71,6 +72,8 @@ potmixed = (alphau - bup(x,y)  - su + gup(x,y))*(x**2)*(y**2)
 
 22 end function potmixed
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 real (kind=8) function kinet(in)
 
 use globalvars
@@ -81,6 +84,54 @@ implicit none
 kinet = (in**2)/(2.0*mass)
 
 end function kinet
+
+real (kind=8) function rhotomom(rhoin)
+
+use globalvars
+
+implicit none
+	real (kind=8)		::rhoin
+	
+rhotomom = (3.0*(pi**2)*rhoin)**(1.0/3.0)
+
+end function
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+real(kind=8) function momtorho(mominf)
+
+use globalvars
+
+implicit none
+	real(kind=8)		:: mominf
+	
+momtorho = (mominf**3)/(3.0*(pi**2))
+
+end function
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+real(kind=8) function electronen(mominf)
+
+implicit none
+	real(kind=8)		:: masse = 0.511
+	real(kind=8)		:: mominf
+	
+electronen = ((mominf**2) + (masse)**2)**(1.0/2.0)
+
+end function
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+real(kind=8) function muonmom(chemin)
+
+implicit none
+	real (kind=8)		:: chemin
+	real (kind=8)		:: massmu = 105.66		! MeV/C
+	
+muonmom = sqrt((chemin**2) - (massmu**2))
+
+end function
 
 end module
 
