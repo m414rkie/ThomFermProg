@@ -10,10 +10,11 @@ PROGRAM msenergy
 !	1.00c - Iteration of temp, rho implemented
 !	1.00d - Implementation of pressure, epsilon
 !	1.00e - User interface implemented
+!	1.10a - Implementation of selective densities, root-finding, muons
 !
 ! Version   Programmer         Date       Description
 ! -------   ----------         --------   --------------------
-! 1.00e     Jon Parsons        10-29-17		Snr. Thesis
+! 1.10a     Jon Parsons        10-29-17	  Snr. Thesis
 !
 ! IN args/commons              Units      Description
 ! -----------------            -----      ----------------------

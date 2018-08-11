@@ -17,7 +17,8 @@ module globalvars
 	character(1)								:: densenum, densenumparse, mattype, mattypeparse
 	character(50)								:: pressdense, pressrho, rhorange
 	real		(kind=8)						:: exclusion
-
+	real (kind=8)								:: massmu = 105.66/197.329
+	
 end module
 
 
@@ -85,6 +86,8 @@ kinet = (in**2)/(2.0*mass)
 
 end function kinet
 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 real (kind=8) function rhotomom(rhoin)
 
 use globalvars
@@ -114,7 +117,7 @@ end function
 real(kind=8) function electronen(mominf)
 
 implicit none
-	real(kind=8)		:: masse = 0.511
+	real(kind=8)		:: masse = 0.511/197.329
 	real(kind=8)		:: mominf
 	
 electronen = ((mominf**2) + (masse)**2)**(1.0/2.0)
@@ -125,16 +128,55 @@ end function
 
 real(kind=8) function muonmom(chemin)
 
+use globalvars
+
 implicit none
 	real (kind=8)		:: chemin
-	real (kind=8)		:: massmu = 105.66		! MeV/C
+
 	
 muonmom = sqrt((chemin**2) - (massmu**2))
 
 end function
 
-end module
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+real(kind=8) function muonferm(chemenin)
+
+use globalvars
+
+implicit none
+	real (kind=8)		:: chemenin
+	
+muonferm = sqrt((massmu**2)+(chemenin**2))
+
+end function
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+real (kind=8) function potforchem(x,y)
+
+use globalvars
+
+implicit none
+	real (kind=8)	:: x, y, a, b
+	real (kind=8)	:: blo, glo, sl
+	
+
+	blo(a,b) = betal*((abs(b-a)/momentumcurrent)**2)
+	glo(a,b) = gammal*(momfin/abs(b-a))
+	sl		 = sigmal*(((2.0*rhobar)/(rho0))**(2.0/3.0))
+
+	
+	if (abs(y-x) .lt. 0.415) then
+		potforchem = 0.0
+		goto 21
+	end if
+
+potforchem = (alphal - blo(x,y)  - sl + glo(x,y))
+
+21 end function potforchem
+
+end module
 
 
 

@@ -293,27 +293,29 @@ use functions
 
 implicit none
 	real (kind=8)					:: pfp, pfe, pfn, pfx, pfy
-	real (kind=8)					:: pfm, rhomu
+	real (kind=8)					:: pfm, rhomu, muchem
 	real (kind=8)					:: protchem, elecchem, neutchem
 	integer							:: i, arrval, intcount
-	real (kind=8)					:: protelectot
+	real (kind=8)					:: protelectot, rhoprot
 	real (kind=8) 					:: neutdense
 	real (kind=8), allocatable		:: protchemarr(:)
 
 write(*,*) "Input density due to protons:"
-read(*,*) rho
+read(*,*) rhoprot
 
 pfp = rhotomom(rho)
 pfe = pfp
-pfm = muonmom(pfe)
 
-rhomu = momtorho(pfm)
 elecchem = electronen(pfe)
+
+pfm = muonmom(elecchem)
 
 neutchem = 0.0
 pfn = 0.0
 
-dv = 0.00001
+dv = 0.0001
+
+rho = rhoprot
 
 arrval = ceiling(pfp/dv)
 allocate(protchemarr(arrval))
@@ -331,19 +333,27 @@ end do
 
 call boolequad(protchemarr,protchem,arrval)
 
-protchem = protchem + kinet(pfp)
+protchem = -temp*(2.0/rho0)*((4.0*pi)**2)*(2.0/((2.0*pi)**3))*protchem + kinet(pfp)
 
 protelectot = protchem + elecchem
+
+if (pfm .gt. 0.01) then
+	protelectot = protelectot + elecchem
+	write(*,*) "Muons included."
+end if
+
 neutchem = protelectot
 
-call root(neutchem,pfn,arrval,protelectot)
+call root(neutchem,pfn,arrval,protelectot,rhoprot)
 
 neutdense =  momtorho(pfn)
+
+rhomu = momtorho(pfm)
 
 write(*,*) "Proton chemical potential:", protchem, "MeV"
 write(*,*) "Electron chemical potential:", elecchem, "MeV"
 write(*,*) "Total neutron chemical potential:", neutchem, "MeV"
-write(*,*) "Proton density:", rho, "1/fm^3"
+write(*,*) "Proton density:", rhoprot, "1/fm^3"
 write(*,*) "Proton Fermi momentum:", pfp
 write(*,*) "Neutron Fermi momentum:", pfn
 write(*,*) "Neutron Density:", neutdense, "1/fm^3"
@@ -357,7 +367,7 @@ end subroutine
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-subroutine root(checkagainst,finchem,arrsize,pcheck) 
+subroutine root(checkagainst,finchem,arrsize,pcheck,protrho) 
 
 use globalvars
 use functions
@@ -366,35 +376,40 @@ implicit none
 	real (kind=8)					:: checkagainst, finchem, pcheck
 	integer							:: arrsize, i
 	real (kind=8)					:: step, pfn, pfnx, delta
-	real (kind=8)					:: neutsingle, neutrho
+	real (kind=8)					:: neutsingle, neutrho, protrho
 	real (kind=8)					:: func, derive, derivepls1, deriveorig
 	real (kind=8), allocatable		:: neutchemarr(:)
 
-finchem = 2.0*pcheck
+finchem = 0.0
 delta  = 0.001
+neutsingle = 0.0
 
 103 arrsize = (finchem/dv)
+
+rho = finchem
 
 allocate(neutchemarr(arrsize))
 
 do i = 1, arrsize, 1
 
 	pfnx = dv*float(i)
-	neutchemarr(i) = potunmixed(finchem,pfnx)
+	neutchemarr(i) = potforchem(finchem,pfnx)
 
 end do
 
 call boolequad(neutchemarr,neutsingle,arrsize)
 
-neutsingle = neutsingle + kinet(finchem)
+neutsingle = -temp*(2.0/rho0)*((4.0*pi)**2)*(2.0/((2.0*pi)**3))*neutsingle + kinet(finchem)
 
-if (abs(checkagainst-neutsingle) .gt. 0.01) then
-	finchem = finchem - delta
+if (abs(checkagainst-neutsingle) .gt. 0.001) then
+
+	finchem = finchem + delta
+	
 	deallocate(neutchemarr)
 	goto 103
 end if
 
-if (finchem .lt. 0) then
+if ((finchem .lt. 0) .or. (finchem .gt. 20)) then
 	write(*,*) "!!!!!!!!!!!No root found!!!!!!!!!!"
 end if
 
