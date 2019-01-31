@@ -46,10 +46,10 @@ implicit none
 	integer			:: i
 	real (kind=8)	:: energy, momdv, rholow
 	real (kind=8)	:: epsil, rhofinal
+	character*1		:: chemflag
 
 ! Constant declarations
 momfin = 1.36
-rho0 = 0.161
 mass = 939.57/197.329
 temp = 37.679/197.329
 
@@ -62,7 +62,6 @@ xi    = 0.44003
 zeta  = 0.59778
 
 ! l suffix for unmixed matter, u suffix for mixed matter
-! For current version only unmixed matter is used (neutron matter)
 alphau = 0.5*(1.0 + xi)*alpha
 betau  = 0.5*(1.0+zeta)*beta
 gammau = 0.5*(1.0+zeta)*gamma
@@ -78,8 +77,6 @@ sigmal = 0.5*(1.0-zeta)*sigma
 n = 800
 rhodv = 0.00833333333333333
 ! Step variables, n for integration, m for graph output
-
-exclusion = 0.415
 
 call input
 
@@ -146,6 +143,12 @@ call incompressibility(enerray)
 
 end if
 
-call chempot
+write(*,*) "Find relative densities? (y/n)"
+read(*,*) chemflag
+
+if (chemflag .eq. "y") then
+	call chempot
+end if
+
 
 end program

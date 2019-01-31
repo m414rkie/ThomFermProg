@@ -7,7 +7,7 @@ module globalvars
 	real		(kind=8)					    :: alphau, betau, gammau, sigmau, bu
 	integer					      		        :: n, checkarray, m, exitcondition
 	real		(kind=8)					    :: dv, mass, matchoice, rhodv
-	real		(kind=8)						:: pfin, rho0
+	real		(kind=8)						:: pfin, rho0 = 0.161
 	real		(kind=8)						:: momfin, momin, momentumcurrent
 	real		(kind=8)						:: temp, rho, rhobar
 	real		(kind=8)						:: pot, p0
@@ -16,8 +16,8 @@ module globalvars
 	real  		(kind=8), allocatable			:: epsrho(:,:), pressure(:,:), enerray(:,:)
 	character(1)								:: densenum, densenumparse, mattype, mattypeparse
 	character(50)								:: pressdense, pressrho, rhorange
-	real		(kind=8)						:: exclusion
-	real (kind=8)								:: massmu = 105.66/197.329
+	real		(kind=8)						:: exclusion = 0.415
+	real 		(kind=8)						:: massmu = 105.66/197.329
 	
 end module
 
@@ -95,7 +95,7 @@ use globalvars
 implicit none
 	real (kind=8)		::rhoin
 	
-rhotomom = (3.0*(pi**2)*rhoin)**(1.0/3.0)
+rhotomom = (3.0*(pi**2)*rhoin)**(0.3333)
 
 end function
 
@@ -120,7 +120,7 @@ implicit none
 	real(kind=8)		:: masse = 0.511/197.329
 	real(kind=8)		:: mominf
 	
-electronen = ((mominf**2) + (masse)**2)**(1.0/2.0)
+electronen = sqrt((mominf**2) + (masse**2))
 
 end function
 
@@ -133,21 +133,24 @@ use globalvars
 implicit none
 	real (kind=8)		:: chemin
 
-	
-muonmom = sqrt((chemin**2) - (massmu**2))
+if (chemin .gt. massmu) then
+	muonmom = sqrt((chemin**2) - (massmu**2))
+else
+	muonmom = 0.0
+end if
 
 end function
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-real(kind=8) function muonferm(chemenin)
+real(kind=8) function muonchem(moment)
 
 use globalvars
 
 implicit none
-	real (kind=8)		:: chemenin
+	real (kind=8)		:: moment
 	
-muonferm = sqrt((massmu**2)+(chemenin**2))
+muonchem = sqrt((massmu**2)+(moment**2))
 
 end function
 
@@ -167,12 +170,12 @@ implicit none
 	sl		 = sigmal*(((2.0*rhobar)/(rho0))**(2.0/3.0))
 
 	
-	if (abs(y-x) .lt. 0.415) then
+	if (abs(y-x) .lt. 0.00001) then
 		potforchem = 0.0
 		goto 21
 	end if
 
-potforchem = (alphal - blo(x,y)  - sl + glo(x,y))
+potforchem = (alphal - blo(x,y)  - sl + glo(x,y))*(x**2)
 
 21 end function potforchem
 

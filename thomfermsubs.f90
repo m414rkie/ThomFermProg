@@ -14,10 +14,10 @@ implicit none
 booleint = 0.0
 
 ! Loop for composite Boole's rule. Weights included.
-do i = 4, upto, 4
+do i = 2, upto, 1
 	
-	booleint = booleint + dv*(2.0/45.0)*(7.0*arr(i)+32.0*arr(i-1)+12.0*arr(i-2)+32.0*arr(i-3)+7.0*arr(i-4))
-
+	booleint = booleint + 0.5*dv*(arr(i) + arr(i-1))
+	
 end do
 
 end subroutine
@@ -129,28 +129,6 @@ end subroutine
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-subroutine chartoup(stringin,stringout)
-
-! converts text input to upper case
-
-implicit none
-	character(*)					:: stringin
-	character(len(stringin))		:: stringout
-	integer							:: i, j
-
-do i = 1, len(stringin), 1
-	j = iachar(stringin(i:i))
-		if(j .ge. iachar("a") .and. j .le. iachar("z")) then
-			stringout(i:i) = achar(iachar(stringin(i:i))-32)
-		else
-			stringout(i:i) = stringin(i:i)
-		end if
-end do
-
-end subroutine
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
 subroutine press(arrin)
 
 ! Calculates the pressure as a derivative of energy per nucleon. 
@@ -206,85 +184,6 @@ end subroutine
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-subroutine input
-
-! Parses input
-
-use globalvars
-
-50 write(*,*) "Symmetric matter or Neutron matter? (S/N)"
-read(*,*) mattype
-
-call chartoup(mattype,mattypeparse)
-
-! Parse first input
-if ((mattypeparse .ne. "S") .and. (mattypeparse .ne. "N")) then
-	write(*,*) "Please enter 'S' for symmetric of 'N' for neutron matter"
-	goto 50
-end if
-
-if (mattypeparse .eq. "S") then
-	
-	matchoice = 1.0
-	
-	else
-	
-	matchoice = 0.0
-
-end if
-
-51 write(*,*) "Would you like a single density or a range? (S/R)"
-read(*,*) densenum
-
-call chartoup(densenum,densenumparse)
-
-! Parse second input
-if ((densenumparse .ne. "S") .and. (densenumparse .ne. "R")) then
-	write(*,*) "Please enter 'S' for a single density or 'R' for a range."
-	goto 51
-end if
-
-! Further inputs 
-
-if (densenumparse .eq. "S") then
-
-! For a single density
-	write(*,*) "Please enter the density desired."
-	read(*,*) rho
-	
-else 
-
-! For a range of densities
-	write(*,*) "Please enter the lower bound of density desired:"
-	read(*,*) rholow
-	write(*,*) "Please enter the upper bound:"
-	read(*,*) rhofinal
-	
-	m = ceiling((rhofinal - rholow)/rhodv)
-
-	
-	write(rhorange,'(2f5.2)') rholow, rhofinal
-
-
-	! Filename logic, standard (-std) or neutron (-neut) matter names
-	if (mattypeparse .eq. "S") then
-	
-		open(unit=13,file=trim(rhorange)//"energypernucleonstd.dat",position="append",status="replace")
-		pressrho   = trim(rhorange)//"Pressurebyrhostd.dat"
-		pressdense = trim(rhorange)//"Pressurebyepsilonstd.dat"
-		
-	else
-	
-		open(unit=13,file=trim(rhorange)//"energypernucleonneut.dat",position="append",status="replace")
-		pressrho	 = trim(rhorange)//"Pressurebyrhoneut.dat"
-		pressdense   = trim(rhorange)//"Pressurebyepsilonneut.dat"
-	end if
-	
-end if
-
-end subroutine
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 subroutine chempot
 
@@ -293,140 +192,161 @@ use functions
 
 implicit none
 	real (kind=8)					:: pfp, pfe, pfn, pfx, pfy
-	real (kind=8)					:: pfm, rhomu, muchem
-	real (kind=8)					:: protchem, elecchem, neutchem
-	integer							:: i, arrval, intcount
+	real (kind=8)					:: pfm, rhomu, muchem, charge
+	real (kind=8)					:: protchem, elecchem, neutchem, elsechem
+	integer							:: i, j, arrval, intcount, k
 	real (kind=8)					:: protelectot, rhoprot
-	real (kind=8) 					:: neutdense
+	real (kind=8) 					:: neutdense, totdense
 	real (kind=8), allocatable		:: protchemarr(:)
+	real (kind=8)					:: mucheck, elecrho
 
-write(*,*) "Input density due to protons:"
-read(*,*) rhoprot
-
-pfp = rhotomom(rho)
-pfe = pfp
-
-elecchem = electronen(pfe)
-
-pfm = muonmom(elecchem)
-
+!write(*,*) "Input density due to protons:"
+!read(*,*) rhoprot
+!dv = 0.0001
+protchem = 0.0
+elecchem = 0.0
 neutchem = 0.0
-pfn = 0.0
 
-dv = 0.0001
+open(unit=13,file="reldensities.dat",status="replace",position="append")
+write(13,*) "density	proton	electron	neutron		muon"
 
+do j = 1, 200, 1
+
+protchem = 0.0
+elecchem = 0.0
+neutchem = 0.0
+rhomu = 0.0
+
+
+pfe = float(j)*0.01
+
+elecrho = momtorho(pfe)
+elecchem = electronen(pfe)
+muchem = elecchem
+pfm = muonmom(muchem)
+rhomu = momtorho(pfm)
+
+if (pfm .eq. 0.0) then
+	write(*,*) "MU NOT!!!"
+	muchem = 0.0
+	pfm = 0.0
+	rhomu = 0.0
+end if
+
+
+rhoprot = elecrho + rhomu
 rho = rhoprot
+rhobar = rho
 
-arrval = ceiling(pfp/dv)
+pfp = rhotomom(rhoprot)
+
+momentumcurrent = pfp
+
+arrval = 1000!ceiling(pfp/dv)
 allocate(protchemarr(arrval))
 
 protchemarr = 0.0
 
-do i = 1, arrval, 1
- pfx = dv*float(i)
+do i = 1, 1000, 1!arrval, 1
+ pfx = float(i)*(pfp/1000.0)!dv*float(i)
  
- 	if (abs(pfp-pfx) .gt. exclusion) then
-		protchemarr(i) = potunmixed(pfp,pfx)
-	end if
-	
+	protchemarr(i) = potunmixed(pfp,pfx)
+
 end do
 
 call boolequad(protchemarr,protchem,arrval)
 
-protchem = -temp*(2.0/rho0)*((4.0*pi)**2)*(2.0/((2.0*pi)**3))*protchem + kinet(pfp)
+protchem = -temp*(2.0/rho0)*((4.0*pi))*(2.0/((2.0*pi)**3))*protchem + kinet(pfp)
 
 protelectot = protchem + elecchem
 
-if (pfm .gt. 0.01) then
-	protelectot = protelectot + elecchem
-	write(*,*) "Muons included."
-end if
-
 neutchem = protelectot
 
-call root(neutchem,pfn,arrval,protelectot,rhoprot)
+pfn = 0.5*pfp 
+call root(pfn,neutchem)
 
 neutdense =  momtorho(pfn)
 
-rhomu = momtorho(pfm)
+charge = rhoprot - elecrho - rhomu
 
-write(*,*) "Proton chemical potential:", protchem, "MeV"
-write(*,*) "Electron chemical potential:", elecchem, "MeV"
-write(*,*) "Total neutron chemical potential:", neutchem, "MeV"
-write(*,*) "Proton density:", rhoprot, "1/fm^3"
-write(*,*) "Proton Fermi momentum:", pfp
-write(*,*) "Neutron Fermi momentum:", pfn
-write(*,*) "Neutron Density:", neutdense, "1/fm^3"
+write(*,*) "Charge: ", charge
 
-if (pfm .gt. 0.1) then
-	write(*,*) "Muon Fermi momentum:", pfm
-	write(*,*) "Muon Density:", rhomu, "1/fm^3"
-end if
+totdense = (neutdense + rhoprot + rhomu + elecrho)
+
+write(*,*) "Density:", totdense
+
+write(13,*) totdense/rho0, rhoprot/totdense, elecrho/totdense, neutdense/totdense, rhomu/totdense
+
+deallocate(protchemarr)
+
+end do
 
 end subroutine
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-subroutine root(checkagainst,finchem,arrsize,pcheck,protrho) 
+subroutine root(finchem,pcheck) 
 
 use globalvars
 use functions
 
 implicit none
-	real (kind=8)					:: checkagainst, finchem, pcheck
-	integer							:: arrsize, i
-	real (kind=8)					:: step, pfn, pfnx, delta
-	real (kind=8)					:: neutsingle, neutrho, protrho
-	real (kind=8)					:: func, derive, derivepls1, deriveorig
+	real (kind=8)					:: finchem, pcheck
+	integer							:: arrsize, i, nit
+	real (kind=8)					:: pfnx, delta, dvp
+	real (kind=8)					:: neutsingle, neutrho
+	real (kind=8)					:: diff
 	real (kind=8), allocatable		:: neutchemarr(:)
 
-finchem = 0.0
-delta  = 0.001
-neutsingle = 0.0
+nit = 0
+!dvp = 0.0001
+delta = 0.0001
+neutsingle = 0.0 
+diff = 1.0
 
-103 arrsize = (finchem/dv)
+do while ((abs(diff) .gt. 0.001).or.(pcheck*neutsingle .lt. 0.0))
 
-rho = finchem
+finchem = finchem + delta
+
+nit = nit + 1
+
+if (finchem .gt. 5.0) then
+	write(*,*) "No root"
+	exit
+end if
+
+!arrsize = ceiling(finchem/dvp)
+arrsize = 1000
+momentumcurrent = finchem
 
 allocate(neutchemarr(arrsize))
 
-do i = 1, arrsize, 1
+neutchemarr = 0.0
+neutsingle = 0.0
 
-	pfnx = dv*float(i)
-	neutchemarr(i) = potforchem(finchem,pfnx)
+rho = momtorho(finchem)
+rhobar = rho
+momentumcurrent = finchem
+
+do i = 1, 1000, 1!arrsize, 1
+		
+	pfnx = float(i)*(finchem/1000.0)!dvp*float(i)
+	
+	neutchemarr(i) = potunmixed(finchem,pfnx)	
 
 end do
 
 call boolequad(neutchemarr,neutsingle,arrsize)
 
-neutsingle = -temp*(2.0/rho0)*((4.0*pi)**2)*(2.0/((2.0*pi)**3))*neutsingle + kinet(finchem)
+neutsingle =  -temp*(2.0/rho0)*((4.0*pi))*(2.0/((2.0*pi)**3))*neutsingle + kinet(finchem)
 
-if (abs(checkagainst-neutsingle) .gt. 0.001) then
+diff = abs(pcheck)-abs(neutsingle)
 
-	finchem = finchem + delta
+deallocate(neutchemarr)
 	
-	deallocate(neutchemarr)
-	goto 103
-end if
+end do
 
-if ((finchem .lt. 0) .or. (finchem .gt. 20)) then
-	write(*,*) "!!!!!!!!!!!No root found!!!!!!!!!!"
-end if
-
+write(*,*) "Input: ", pcheck, "Found: ", neutsingle, "delta: ", diff
+write(*,*) nit
 
 end subroutine
-
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
